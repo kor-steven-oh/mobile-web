@@ -1,0 +1,64 @@
+/* Reference-matched acrylic blocks: flat faces, narrow bevels, restrained reflections. */
+.object-badge.jelly,
+.start-page .object-badge.jelly,
+.cube.jelly,
+.start-page .cube.jelly {
+  background: none;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+}
+.jelly-surface {
+  display: block;
+  position: absolute;
+  pointer-events: none;
+  background-image: url('/acrylic-blocks.png');
+  background-repeat: no-repeat;
+  background-size: 300% 200%;
+}
+.object-badge.jelly>.jelly-surface {
+  width: 122%;
+  aspect-ratio: 1;
+  left: -11%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.object-badge.jelly.code>.jelly-surface {
+  background-position: 0 0;
+  clip-path: polygon(13.4% 36%, 14.2% 35.2%, 30.5% 28.4%, 93.4% 35.4%, 95% 36.8%, 95% 64.8%, 94% 66%, 83% 73.3%, 81% 73.4%, 14.5% 65%, 13.4% 63.5%);
+}
+.object-badge.jelly.build>.jelly-surface {
+  background-position: 50% 0;
+  clip-path: polygon(10.4% 35.5%, 11.3% 34.3%, 25.8% 28%, 27% 27.9%, 87.7% 34.4%, 89.3% 35.5%, 89.3% 63.8%, 88.5% 65%, 79.3% 72.1%, 77.5% 72.3%, 11.5% 64.3%, 10.4% 63%);
+}
+.object-badge.jelly.connect>.jelly-surface {
+  background-position: 100% 0;
+  clip-path: inset(34.8% 9.7% 35.1% 3.1% round 999px);
+}
+/* Clip each sprite to its silhouette so it also works on the blue session card. */
+.cube.jelly>.jelly-surface {
+  inset: -30%;
+  transform: translateY(10%);
+  background-position: 0 100%;
+  clip-path: polygon(47% 7.8%, 48.4% 7.7%, 74.5% 22.5%, 75.4% 23.8%, 83.1% 45.5%, 82.8% 47.3%, 59% 71.4%, 57.1% 72%, 29% 57.3%, 28.4% 56%, 22.8% 30.3%, 22.8% 28.9%);
+}
+.jelly { filter: drop-shadow(0 8px 7px #234fe51c); }
+.cube.jelly,.home-hero>.cube.jelly { transform: none; }
+.cube.jelly>.cube-label { z-index: 1; color: #24300e; font-size: 13px; font-weight: 800; text-shadow: 0 1px 2px #ffffff80; }
+.start-page .floating-one.jelly { transform: none; }
+.start-page .floating-two.jelly { transform: rotate(8deg); }
+.start-page .floating-two.jelly>.jelly-surface {
+  background-position: 100% 100%;
+  clip-path: polygon(43.8% 10.1%, 45.5% 10%, 64.5% 17.1%, 66% 18.3%, 78.2% 46%, 78% 47.5%, 49.5% 68.8%, 48% 69%, 28.6% 58.3%, 27.7% 57%, 17.2% 33%, 17.5% 30.8%);
+}
+
+/* Preserve the straight faces and the reference objects’ natural perspective. */
+.object-badge.jelly.build,.start-page .object-badge.jelly.build{transform:rotate(-16deg)}
+.start-page .start-bottom-art .object-badge.jelly.build{transform:none}
+.start-page .start-bottom-art .object-badge.jelly.build>.jelly-surface {
+  background-image: url('/build-up-right.png');
+  background-size: 100% 100%;
+  background-position: center;
+  clip-path: polygon(12% 47.4%, 23% 37%, 24% 36.5%, 80.3% 23.2%, 81.2% 23.4%, 81.9% 24.5%, 90% 53.5%, 90% 54.5%, 89.5% 55.2%, 77.3% 63.9%, 76.2% 64.3%, 19% 77.2%, 18% 77%, 17.5% 76.1%, 11.8% 48.8%, 11.8% 48%);
+}
+.object-badge.jelly.connect,.start-page .object-badge.jelly.connect{transform:rotate(-16deg)}

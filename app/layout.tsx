@@ -1,6 +1,8 @@
 import type {Metadata,Viewport} from 'next';
 import {headers} from 'next/headers';
 import './globals.css';
+import './start-page.css';
+import './jelly.css';
 export async function generateMetadata():Promise<Metadata>{
  const h=await headers();
  const origin=`${h.get('x-forwarded-proto')||'http'}://${h.get('host')||'localhost:3000'}`;

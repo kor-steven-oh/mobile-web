@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sdd-2026",
+  "account_id": "8b6237cf348b6d4ce0c692797160e59c",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": { "directory": "dist/client", "binding": "ASSETS" },
+  "observability": { "enabled": true }
+}

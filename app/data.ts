@@ -1,16 +1,340 @@
 export type Session={id:number;day:number;start:string;end:string;hall:string;type:string;title:string;description:string;speaker:string;role:string;color:string};
-export const sessions:Session[]=[
-{id:1,day:21,start:'09:30',end:'10:30',hall:'Main Stage',type:'Keynote',title:'A More Open Galaxy',description:'더 열린 가능성, 더 넓은 연결. 차세대 반도체와 AI가 만들어갈 새로운 개발 경험을 함께 살펴봅니다.',speaker:'김민준',role:'S.LSI · AI Platform',color:'blue'},
-{id:2,day:21,start:'11:00',end:'12:00',hall:'Room A',type:'Technical Session',title:'The Next Generation of Galaxy AI',description:'온디바이스 AI의 설계부터 최적화까지. 새로운 AI 경험을 만드는 개발 인사이트를 나눕니다.',speaker:'박서연',role:'S.LSI · AI Research',color:'green'},
-{id:3,day:21,start:'11:00',end:'12:00',hall:'Room B',type:'Technical Session',title:'Inside the Next Exynos',description:'차세대 모바일 프로세서의 아키텍처와 성능 최적화 방법을 알아봅니다.',speaker:'이도현',role:'S.LSI · SoC Development',color:'blue'},
-{id:4,day:21,start:'13:30',end:'14:30',hall:'Main Stage',type:'Panel Discussion',title:'Build for a Better Connected World',description:'개발자와 파트너가 함께 이야기하는 연결의 미래. 기술이 일상에 가져올 변화를 만나보세요.',speaker:'최지우 외 3명',role:'Developer Panel',color:'blue'},
-{id:5,day:21,start:'15:00',end:'16:30',hall:'Room A',type:'Hands-on',title:'Hands-on Lab with Samsung APIs',description:'실습을 통해 API를 연결하고 나만의 서비스를 만들어 봅니다. 개인 노트북을 준비해주세요.',speaker:'정우진',role:'S.LSI · Developer Experience',color:'green'},
-{id:6,day:21,start:'17:00',end:'18:00',hall:'Main Stage',type:'Lightning Talks',title:'Developer Voices',description:'작은 아이디어에서 시작된 큰 변화. 개발자들의 프로젝트와 배움을 공유합니다.',speaker:'커뮤니티 개발자',role:'Developer Community',color:'blue'},
-{id:7,day:22,start:'10:00',end:'11:00',hall:'Main Stage',type:'Keynote',title:'Intelligence, Everywhere',description:'모든 디바이스에 스며드는 지능. 엣지 AI의 다음 단계를 함께 탐색합니다.',speaker:'김민준',role:'S.LSI · AI Platform',color:'blue'},
-{id:8,day:22,start:'11:30',end:'12:30',hall:'Room A',type:'Technical Session',title:'Vision Beyond the Sensor',description:'이미지 센서와 AI의 만남. 컴퓨터 비전의 새로운 가능성을 소개합니다.',speaker:'박서연',role:'S.LSI · AI Research',color:'green'},
-{id:9,day:22,start:'14:00',end:'15:30',hall:'Room B',type:'Hands-on',title:'Your First On-device AI App',description:'온디바이스 모델을 적용해 첫 번째 AI 앱을 만들어보는 실습 세션입니다.',speaker:'정우진',role:'Developer Experience',color:'blue'},
-{id:10,day:23,start:'10:00',end:'11:00',hall:'Room A',type:'Technical Session',title:'Designing a Sustainable Future',description:'에너지 효율적인 소프트웨어와 반도체 설계를 위한 접근법을 나눕니다.',speaker:'이도현',role:'S.LSI · SoC Development',color:'green'},
-{id:11,day:23,start:'13:00',end:'14:00',hall:'Room B',type:'Hands-on',title:'Build Together: Open Source Lab',description:'오픈소스 프로젝트에 함께 기여하고 새로운 연결을 만들어보세요.',speaker:'정우진',role:'Developer Experience',color:'blue'},
-{id:12,day:23,start:'16:00',end:'17:00',hall:'Main Stage',type:'Panel Discussion',title:'Our Next Chapter',description:'3일간의 아이디어를 돌아보고 함께 만들어갈 다음 챕터를 이야기합니다.',speaker:'커뮤니티 개발자',role:'Developer Community',color:'blue'}];
-export const events=[{id:'connect',label:'NETWORKING',title:'Hello, developers.',text:'같은 호기심을 가진 사람들과\n새로운 연결을 시작하세요.',time:'1.21 · 18:00–19:30',place:'Community Lounge'}, {id:'build',label:'EXPERIENCE',title:'Build. Play. Discover.',text:'직접 만지고 경험하는 기술.\n새로운 가능성을 발견해보세요.',time:'1.21–23 · 10:00–17:00',place:'Experience Zone'}, {id:'code',label:'CHALLENGE',title:'Your next big idea.',text:'작은 아이디어를 코드로.\n개발자 챌린지에 도전하세요.',time:'1.22 · 14:00–17:00',place:'Room B'}];
-export function filterSessions(day:number,hall:string,query:string){return sessions.filter(s=>s.day===day&&(hall==='전체'||s.hall===hall)&&`${s.title} ${s.type} ${s.speaker}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a,b)=>a.start.localeCompare(b.start)||a.hall.localeCompare(b.hall));}
+export const halls = ["101 AP", "102 CP", "201 LSI", "206 Sensor", "208 직속"] as const;
+export const sessions:Session[] = [
+  {
+    "id": 1,
+    "day": 15,
+    "start": "10:00",
+    "end": "11:00",
+    "hall": "101 AP",
+    "type": "Keynote",
+    "title": "A More Open Galaxy",
+    "description": "더 열린 가능성, 더 넓은 연결. 차세대 반도체와 AI가 만들어갈 새로운 개발 경험을 함께 살펴봅니다.",
+    "speaker": "김민준",
+    "role": "S.LSI · AI Platform",
+    "color": "blue"
+  },
+  {
+    "id": 4,
+    "day": 15,
+    "start": "11:00",
+    "end": "12:00",
+    "hall": "101 AP",
+    "type": "Panel Discussion",
+    "title": "Build for a Better Connected World",
+    "description": "개발자와 파트너가 함께 이야기하는 연결의 미래. 기술이 일상에 가져올 변화를 만나보세요.",
+    "speaker": "최지우 외 3명",
+    "role": "Developer Panel",
+    "color": "blue"
+  },
+  {
+    "id": 6,
+    "day": 15,
+    "start": "13:30",
+    "end": "14:30",
+    "hall": "101 AP",
+    "type": "Lightning Talks",
+    "title": "Developer Voices",
+    "description": "작은 아이디어에서 시작된 큰 변화. 개발자들의 프로젝트와 배움을 공유합니다.",
+    "speaker": "커뮤니티 개발자",
+    "role": "Developer Community",
+    "color": "blue"
+  },
+  {
+    "id": 7,
+    "day": 15,
+    "start": "15:00",
+    "end": "16:00",
+    "hall": "101 AP",
+    "type": "Keynote",
+    "title": "Intelligence, Everywhere",
+    "description": "모든 디바이스에 스며드는 지능. 엣지 AI의 다음 단계를 함께 탐색합니다.",
+    "speaker": "김민준",
+    "role": "S.LSI · AI Platform",
+    "color": "blue"
+  },
+  {
+    "id": 12,
+    "day": 15,
+    "start": "17:00",
+    "end": "18:00",
+    "hall": "101 AP",
+    "type": "Panel Discussion",
+    "title": "Our Next Chapter",
+    "description": "오늘 나눈 아이디어를 돌아보고 함께 만들어갈 다음 챕터를 이야기합니다.",
+    "speaker": "커뮤니티 개발자",
+    "role": "Developer Community",
+    "color": "blue"
+  },
+  {
+    "id": 2,
+    "day": 15,
+    "start": "10:00",
+    "end": "11:00",
+    "hall": "102 CP",
+    "type": "Technical Session",
+    "title": "The Next Generation of Galaxy AI",
+    "description": "온디바이스 AI의 설계부터 최적화까지. 새로운 AI 경험을 만드는 개발 인사이트를 나눕니다.",
+    "speaker": "박서연",
+    "role": "S.LSI · AI Research",
+    "color": "green"
+  },
+  {
+    "id": 5,
+    "day": 15,
+    "start": "11:00",
+    "end": "12:00",
+    "hall": "102 CP",
+    "type": "Hands-on",
+    "title": "Hands-on Lab with Samsung APIs",
+    "description": "실습을 통해 API를 연결하고 나만의 서비스를 만들어 봅니다. 개인 노트북을 준비해주세요.",
+    "speaker": "정우진",
+    "role": "S.LSI · Developer Experience",
+    "color": "green"
+  },
+  {
+    "id": 8,
+    "day": 15,
+    "start": "13:30",
+    "end": "14:30",
+    "hall": "102 CP",
+    "type": "Technical Session",
+    "title": "Vision Beyond the Sensor",
+    "description": "이미지 센서와 AI의 만남. 컴퓨터 비전의 새로운 가능성을 소개합니다.",
+    "speaker": "박서연",
+    "role": "S.LSI · AI Research",
+    "color": "green"
+  },
+  {
+    "id": 10,
+    "day": 15,
+    "start": "15:00",
+    "end": "16:00",
+    "hall": "102 CP",
+    "type": "Technical Session",
+    "title": "Designing a Sustainable Future",
+    "description": "에너지 효율적인 소프트웨어와 반도체 설계를 위한 접근법을 나눕니다.",
+    "speaker": "이도현",
+    "role": "S.LSI · SoC Development",
+    "color": "green"
+  },
+  {
+    "id": 13,
+    "day": 15,
+    "start": "17:00",
+    "end": "18:00",
+    "hall": "102 CP",
+    "type": "Technical Session",
+    "title": "Smarter AI, Smaller Models",
+    "description": "작은 모델로 더 큰 가능성을 여는 경량화와 추론 최적화 전략을 소개합니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "green"
+  },
+  {
+    "id": 3,
+    "day": 15,
+    "start": "10:00",
+    "end": "11:00",
+    "hall": "201 LSI",
+    "type": "Technical Session",
+    "title": "Inside the Next Exynos",
+    "description": "차세대 모바일 프로세서의 아키텍처와 성능 최적화 방법을 알아봅니다.",
+    "speaker": "이도현",
+    "role": "S.LSI · SoC Development",
+    "color": "blue"
+  },
+  {
+    "id": 9,
+    "day": 15,
+    "start": "11:00",
+    "end": "12:00",
+    "hall": "201 LSI",
+    "type": "Hands-on",
+    "title": "Your First On-device AI App",
+    "description": "온디바이스 모델을 적용해 첫 번째 AI 앱을 만들어보는 실습 세션입니다.",
+    "speaker": "정우진",
+    "role": "Developer Experience",
+    "color": "blue"
+  },
+  {
+    "id": 11,
+    "day": 15,
+    "start": "13:30",
+    "end": "14:30",
+    "hall": "201 LSI",
+    "type": "Hands-on",
+    "title": "Build Together: Open Source Lab",
+    "description": "오픈소스 프로젝트에 함께 기여하고 새로운 연결을 만들어보세요.",
+    "speaker": "정우진",
+    "role": "Developer Experience",
+    "color": "blue"
+  },
+  {
+    "id": 14,
+    "day": 15,
+    "start": "15:00",
+    "end": "16:00",
+    "hall": "201 LSI",
+    "type": "Technical Session",
+    "title": "Optimizing Mobile Graphics",
+    "description": "모바일 그래픽 파이프라인을 분석하고 렌더링 성능을 높이는 방법을 알아봅니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "blue"
+  },
+  {
+    "id": 15,
+    "day": 15,
+    "start": "17:00",
+    "end": "18:00",
+    "hall": "201 LSI",
+    "type": "Technical Session",
+    "title": "Performance from the Inside Out",
+    "description": "프로파일링부터 병목 개선까지, 앱 성능을 개선하는 실전 경험을 공유합니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "blue"
+  },
+  {
+    "id": 16,
+    "day": 15,
+    "start": "10:00",
+    "end": "11:00",
+    "hall": "206 Sensor",
+    "type": "Technical Session",
+    "title": "The Future of Mobile Imaging",
+    "description": "이미지 센서와 영상 처리 기술이 만들어갈 새로운 촬영 경험을 살펴봅니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "green"
+  },
+  {
+    "id": 17,
+    "day": 15,
+    "start": "11:00",
+    "end": "12:00",
+    "hall": "206 Sensor",
+    "type": "Technical Session",
+    "title": "From Pixels to Possibilities",
+    "description": "픽셀에서 시작되는 혁신과 고해상도 이미징의 새로운 가능성을 소개합니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "green"
+  },
+  {
+    "id": 18,
+    "day": 15,
+    "start": "13:30",
+    "end": "14:30",
+    "hall": "206 Sensor",
+    "type": "Technical Session",
+    "title": "Computational Photography Lab",
+    "description": "컴퓨테이셔널 포토그래피를 적용해 이미지 품질을 개선하는 실습입니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "green"
+  },
+  {
+    "id": 19,
+    "day": 15,
+    "start": "15:00",
+    "end": "16:00",
+    "hall": "206 Sensor",
+    "type": "Technical Session",
+    "title": "Seeing Clearly in Low Light",
+    "description": "저조도 환경에서 노이즈를 줄이고 디테일을 복원하는 방법을 나눕니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "green"
+  },
+  {
+    "id": 20,
+    "day": 15,
+    "start": "17:00",
+    "end": "18:00",
+    "hall": "206 Sensor",
+    "type": "Technical Session",
+    "title": "Vision Meets Intelligence",
+    "description": "비전과 인공지능이 만나는 지점에서 새로운 사용자 경험을 탐색합니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "green"
+  },
+  {
+    "id": 21,
+    "day": 15,
+    "start": "10:00",
+    "end": "11:00",
+    "hall": "208 직속",
+    "type": "Technical Session",
+    "title": "Connect Beyond Boundaries",
+    "description": "디바이스 사이의 경계를 넘어서는 연결 기술과 개발 경험을 소개합니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "blue"
+  },
+  {
+    "id": 22,
+    "day": 15,
+    "start": "11:00",
+    "end": "12:00",
+    "hall": "208 직속",
+    "type": "Technical Session",
+    "title": "Secure by Design",
+    "description": "안전한 디바이스와 서비스를 위한 보안 설계 원칙을 살펴봅니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "blue"
+  },
+  {
+    "id": 23,
+    "day": 15,
+    "start": "13:30",
+    "end": "14:30",
+    "hall": "208 직속",
+    "type": "Technical Session",
+    "title": "Building the Connected Ecosystem",
+    "description": "다양한 디바이스가 함께 작동하는 생태계와 연동 방법을 알아봅니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "blue"
+  },
+  {
+    "id": 24,
+    "day": 15,
+    "start": "15:00",
+    "end": "16:00",
+    "hall": "208 직속",
+    "type": "Technical Session",
+    "title": "Developer Tools in Action",
+    "description": "일상적인 개발 과정을 개선하는 도구와 디버깅 워크플로를 공유합니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "blue"
+  },
+  {
+    "id": 25,
+    "day": 15,
+    "start": "17:00",
+    "end": "18:00",
+    "hall": "208 직속",
+    "type": "Technical Session",
+    "title": "Together, We Build Tomorrow",
+    "description": "개발자와 파트너가 함께 만드는 내일의 기술과 협업 사례를 나눕니다.",
+    "speaker": "연사 미정",
+    "role": "S.LSI · Developer Session",
+    "color": "blue"
+  }
+];
+export const events=[{id:'connect',label:'NETWORKING',title:'Hello, developers.',text:'같은 호기심을 가진 사람들과\n새로운 연결을 시작하세요.',time:'10.15 · 18:00–19:30',place:'Community Lounge'}, {id:'build',label:'EXPERIENCE',title:'Build. Play. Discover.',text:'직접 만지고 경험하는 기술.\n새로운 가능성을 발견해보세요.',time:'10.15 · 10:00–17:00',place:'Experience Zone'}, {id:'code',label:'CHALLENGE',title:'Your next big idea.',text:'작은 아이디어를 코드로.\n개발자 챌린지에 도전하세요.',time:'10.15 · 14:00–17:00',place:'201 LSI'}];
+export function filterSessions(hall:string,query:string){
+ return sessions.filter(s=>s.hall===hall&&`${s.title} ${s.type} ${s.speaker}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a,b)=>a.start.localeCompare(b.start));
+}
+
+export function nextSavedSession(savedIds: readonly number[], now: number): Session | undefined {
+  const startTime = (session: Session) => Date.parse(`2026-10-${String(session.day).padStart(2, '0')}T${session.start}:00+09:00`);
+  return sessions
+    .filter(session => savedIds.includes(session.id) && startTime(session) >= now)
+    .sort((a, b) => startTime(a) - startTime(b) || a.hall.localeCompare(b.hall) || a.id - b.id)[0];
+}

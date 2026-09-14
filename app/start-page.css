@@ -1,0 +1,122 @@
+/* Landing composition follows the supplied first-screen reference.
+   The SDD symbol and year lockup retain their existing artwork and proportions. */
+.start-page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  padding: calc(32px + env(safe-area-inset-top)) 26px calc(14px + env(safe-area-inset-bottom));
+  grid-template-rows: 44px clamp(60px, 9svh, 84px) minmax(0, 1fr) clamp(150px, 21svh, 188px) 54px 42px;
+  gap: 0;
+  background: linear-gradient(145deg, #fff 42%, #f3f7fa);
+}
+.start-page::before,
+.start-page::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 85px;
+  height: 85px;
+  background: #1b62ff;
+  transform: rotate(38deg);
+  filter: blur(8px);
+  opacity: .38;
+  pointer-events: none;
+}
+.start-page::before { right: -69px; top: 25%; }
+.start-page::after { right: -53px; bottom: 19%; width: 95px; height: 95px; opacity: .26; }
+.start-page .start-header { align-items: flex-start; font-size: 9px; letter-spacing: 2px; line-height: 1.75; }
+.start-page .start-header>span:last-child { font-size: 7px; letter-spacing: 1.7px; line-height: 1.75; }
+.start-page .start-top-art { display: block; min-height: 0; height: auto; }
+.start-page .start-top-art .code {
+  top: 17px; left: 4px; width: 158px; height: 62px;
+  border-radius: 13px; font-size: 22px; gap: 10px;
+  background: linear-gradient(145deg, #00ec82, #00d963);
+  box-shadow: inset 4px 3px 2px #26ef99, inset -3px -5px 1px #00c463, 0 7px 0 #00b55a, 0 17px 17px #069d5e18;
+}
+.start-page .start-top-art .code svg { width: 31px; height: 31px; }
+.start-page .cube { background: linear-gradient(145deg, #00ee86, #00d364); }
+.start-page .cube i { background: #00af55; }
+.start-page .cube b { background: #00c15b; }
+.start-page .start-top-art .floating-one { width: 31px; height: 31px; top: 2px; right: 52px; }
+.start-page .start-top-art .dotted-line { left: -50px; right: 38px; top: 51px; height: 71px; transform: rotate(-24deg); }
+.start-page .start-main {
+  --message-size: clamp(25px, 3.5svh, 30px);
+  --message-gap: 10px;
+  container-type: size;
+  min-height: 0;
+  /* Both children resolve this width against the same main container. */
+  --lockup-width: min(calc((100cqw - 36px) * .92), calc((100cqh - var(--message-size) * 3.24 - var(--message-gap)) * 1.012), 294px);
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
+  row-gap: var(--message-gap);
+  column-gap: 0;
+}
+.start-page .start-logo-space { width: var(--lockup-width); height: auto; min-height: 0; margin: 0 auto; place-items: end center; }
+.start-page .start-logo { width: 100%; }
+.start-page .start-year { justify-content: center; letter-spacing: -1.6cqw; font-weight: 900; -webkit-text-stroke: .6cqw currentColor; }
+.start-page .start-main h1 { width: var(--lockup-width); margin: 0 auto; font-size: var(--message-size); font-weight: 600; line-height: 1.08; letter-spacing: -.9px; }
+.start-page .start-bottom-art { display: block; position: relative; min-height: 0; margin: 0; height: auto; }
+.start-page .start-bottom-art .build {
+  left: -52px; top: 42px; width: 177px; height: 85px; font-size: 20px;
+  transform: rotate(-16deg) skewX(7deg);
+  box-shadow: -10px 11px 0 #078df5, -10px 20px 16px #1858dd22;
+}
+.start-page .start-bottom-art .connect {
+  right: -52px; top: -44px; width: 179px; height: 99px; font-size: 19px;
+  transform: rotate(-32deg);
+  box-shadow: 0 13px 0 #0642dc, 0 21px 19px #1859ff24;
+}
+.start-page .start-bottom-art .floating-two { display: block; width: 27px; height: 27px; bottom: 7px; right: -3px; }
+.start-page .start-date {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  margin: 0; font-size: 15px; line-height: 1.4; letter-spacing: -.2px;
+  z-index: 2;
+}
+.start-page .start-date>span { white-space: nowrap; }
+.start-page .start-orbit {
+  position: absolute; left: 85px; right: -61px; top: -65px; height: 151px;
+  border: 1px dashed #8d97a7; border-left-color: transparent; border-bottom-color: transparent;
+  border-radius: 50%; transform: rotate(-33deg); pointer-events: none;
+}
+.start-page>.primary-button {
+  justify-self: center; align-self: center;
+  width: 92%; min-height: 50px; height: 50px; padding: 12px 38px;
+  font-size: 16px; border-radius: 30px;
+}
+.start-page>.primary-button svg { right: 20px; width: 20px; }
+.start-page .start-footer { display: flex; align-items: end; margin: 0; padding: 0; font-size: 6px; line-height: 1.5; letter-spacing: 1.3px; }
+.start-page .start-footer b { margin-left: 10px; }
+@media (max-height: 740px) {
+  .start-page { padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: calc(10px + env(safe-area-inset-bottom)); grid-template-rows: 36px 60px minmax(0, 1fr) 146px 50px 34px; }
+  .start-page .start-top-art .code { top: 12px; width: 139px; height: 51px; font-size: 20px; }
+  .start-page .start-main { --message-size: 25px; --message-gap: 8px; }
+  .start-page .start-bottom-art .build { top: 32px; width: 153px; height: 73px; font-size: 18px; }
+  .start-page .start-bottom-art .connect { width: 156px; height: 87px; top: -35px; font-size: 17px; }
+  .start-page .start-date { bottom: 13px; font-size: 14px; }
+  .start-page .start-bottom-art .floating-two { width: 22px; height: 22px; }
+}
+@media (max-height: 580px) {
+  .start-page { padding-top: calc(12px + env(safe-area-inset-top)); grid-template-rows: 30px 42px minmax(0, 1fr) 108px 46px 28px; }
+  .start-page .start-top-art .code { top: 4px; width: 113px; height: 37px; font-size: 17px; }
+  .start-page .start-top-art .code svg { width: 24px; height: 24px; }
+  .start-page .start-top-art .floating-one { width: 22px; height: 22px; }
+  .start-page .start-main { --message-size: 21px; --message-gap: 5px; }
+  .start-page .start-bottom-art .build { left: -44px; top: 20px; width: 117px; height: 56px; font-size: 15px; }
+  .start-page .start-bottom-art .connect { right: -44px; width: 121px; height: 66px; top: -28px; font-size: 14px; }
+  .start-page .start-date { bottom: 8px; }
+  .start-page .start-bottom-art .floating-two { display: none; }
+  .start-page>.primary-button { height: 44px; min-height: 44px; }
+}
+@media (max-height: 450px) and (orientation: landscape) {
+  .start-page { grid-template-rows: 28px minmax(0, 1fr) 48px 44px; }
+  .start-page .start-top-art,.start-page .start-footer { display: none; }
+  .start-page .start-main { grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); align-items: center; }
+  .start-page .start-logo-space { width: 100%; height: 100%; }
+  .start-page .start-main h1 { width: 100%; }
+  .start-page .start-logo { width: min(92cqw, calc(100cqh * 1.012), 294px); }
+  .start-page .start-bottom-art .build { top: 0; width: 95px; height: 39px; }
+  .start-page .start-bottom-art .connect { display: none; }
+}
