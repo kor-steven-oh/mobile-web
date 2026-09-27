@@ -1,0 +1,11 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "sdd-2026-admin",
+  "account_id": "8b6237cf348b6d4ce0c692797160e59c",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": "./dist/client", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/admin/api/*"] },
+  "d1_databases": [{ "binding": "DB", "database_name": "sdd-2026-db", "database_id": "404cdca7-bc59-42d3-b5ca-4da134e18f7e", "migrations_dir": "../drizzle" }],
+  "observability": { "enabled": true }
+}

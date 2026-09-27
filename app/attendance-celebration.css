@@ -1,0 +1,27 @@
+.checkin-celebration{position:fixed;top:calc(env(safe-area-inset-top) + 76px);left:50%;transform:translateX(-50%);width:min(360px,calc(100% - 32px));z-index:40;pointer-events:none}
+.checkin-celebration-card{position:relative;padding:24px 22px 22px;border:1px solid #fff;border-radius:28px;background:linear-gradient(145deg,#fffffff5,#edf4fff5);box-shadow:0 20px 65px #19376530,0 2px 12px #19376512;backdrop-filter:blur(20px);text-align:center;animation:checkin-card-arrive .45s cubic-bezier(.16,1,.3,1) both}
+.checkin-celebration-close{position:absolute;right:8px;top:8px;width:44px;height:44px;display:grid;place-items:center;color:#6e7d93;border-radius:50%;pointer-events:auto;z-index:2}
+.checkin-celebration-close:hover{background:#e9eff8}
+.checkin-celebration-art{height:92px;position:relative;display:grid;place-items:center;margin-bottom:12px}
+.checkin-celebration-seal{position:relative;width:76px;height:76px;display:grid;place-items:center;border-radius:25px;background:linear-gradient(140deg,#e5ff8c,var(--lime));color:#244017;box-shadow:inset 0 2px 0 #ffffffb3,0 8px 22px #b2d74440;animation:checkin-stamp .65s cubic-bezier(.16,1,.3,1) both}
+.checkin-celebration-seal polyline{stroke-dasharray:50;stroke-dashoffset:0;animation:checkin-draw .4s .2s ease-out both}
+.checkin-celebration-ring{position:absolute;width:76px;height:76px;border:2px solid #b7d841;border-radius:50%;animation:checkin-ring .85s .12s ease-out both}
+.checkin-confetti{position:absolute;left:50%;top:50%}
+.checkin-confetti i{position:absolute;width:7px;height:12px;border-radius:2px;background:var(--burst-color);opacity:0;animation:checkin-burst 1.2s var(--burst-delay) cubic-bezier(.12,.65,.35,1) both}
+.checkin-confetti i:nth-child(3n){width:7px;height:7px;border-radius:50%}
+.checkin-celebration-label{font-size:10px;letter-spacing:1.8px;font-weight:750;color:var(--blue)}
+.checkin-celebration-card h2{font-size:26px;font-weight:750;line-height:1.3;letter-spacing:-.8px;margin:7px 0 8px;color:var(--ink)}
+.checkin-celebration-title{font-size:14px;line-height:1.5;color:#66738a;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.checkin-celebration-milestone{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.5;color:#31592b;margin-top:16px}
+.checkin-celebration-progress{display:flex;justify-content:center;gap:8px;margin-top:18px}
+.checkin-celebration-progress>span{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:#e6ebf3;color:#8792a4;font-size:11px}
+.checkin-celebration-progress>span.filled{background:var(--blue);color:white}
+.attendance-stamps>.just-verified .stamp-circle{animation:checkin-row-stamp .6s cubic-bezier(.16,1,.3,1) both}
+@keyframes checkin-card-arrive{from{opacity:0;transform:translateY(-16px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes checkin-stamp{0%{opacity:0;transform:scale(1.45) rotate(-14deg)}45%{opacity:1;transform:scale(.93) rotate(3deg)}70%{transform:scale(1.04) rotate(-1deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes checkin-draw{from{stroke-dashoffset:50}to{stroke-dashoffset:0}}
+@keyframes checkin-ring{from{opacity:.7;transform:scale(.8)}to{opacity:0;transform:scale(2.1)}}
+@keyframes checkin-burst{0%{opacity:0;transform:translate(0,0) rotate(0) scale(.3)}12%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translate(var(--burst-x),var(--burst-y)) rotate(var(--burst-rotate)) scale(.6)}}
+@keyframes checkin-row-stamp{0%{transform:scale(.7)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@media(max-height:540px){.checkin-celebration{top:calc(env(safe-area-inset-top) + 12px)}.checkin-celebration-art{height:66px;margin-bottom:8px}.checkin-celebration-seal{width:60px;height:60px}.checkin-celebration-card{padding:16px 20px}}
+@media(prefers-reduced-motion:reduce){.checkin-celebration-card,.checkin-celebration-seal,.checkin-celebration-seal polyline,.attendance-stamps>.just-verified .stamp-circle{animation:none}.checkin-confetti,.checkin-celebration-ring{display:none}}

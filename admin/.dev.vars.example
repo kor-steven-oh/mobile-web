@@ -1,0 +1,2 @@
+# SHA-256 of the administrator password. Actual values go in .dev.vars, never here.
+ADMIN_PASSWORD_HASH=

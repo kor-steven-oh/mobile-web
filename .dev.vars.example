@@ -1,0 +1,6 @@
+# SHA-256 hex digest of the four-digit STAFF gift redemption PIN.
+# Set the actual hash in .dev.vars locally and as a Worker secret in production.
+STAFF_GIFT_PIN_HASH=
+
+# SHA-256 hex digest of the administrator password for /admin.
+ADMIN_PASSWORD_HASH=

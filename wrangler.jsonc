@@ -7,5 +7,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "assets": { "directory": "dist/client", "binding": "ASSETS" },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "sdd-2026-db",
+    "database_id": "404cdca7-bc59-42d3-b5ca-4da134e18f7e",
+    "migrations_dir": "drizzle"
+  }],
   "observability": { "enabled": true }
 }
