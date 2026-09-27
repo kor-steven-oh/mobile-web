@@ -12,7 +12,7 @@
   display: block;
   position: absolute;
   pointer-events: none;
-  background-image: url('/acrylic-blocks.png');
+  background-image: url('/acrylic-blocks.webp');
   background-repeat: no-repeat;
   background-size: 300% 200%;
 }
@@ -56,7 +56,7 @@
 .object-badge.jelly.build,.start-page .object-badge.jelly.build{transform:rotate(-16deg)}
 .start-page .start-bottom-art .object-badge.jelly.build{transform:none}
 .start-page .start-bottom-art .object-badge.jelly.build>.jelly-surface {
-  background-image: url('/build-up-right.png');
+  background-image: url('/build-up-right.webp');
   background-size: 100% 100%;
   background-position: center;
   clip-path: polygon(12% 47.4%, 23% 37%, 24% 36.5%, 80.3% 23.2%, 81.2% 23.4%, 81.9% 24.5%, 90% 53.5%, 90% 54.5%, 89.5% 55.2%, 77.3% 63.9%, 76.2% 64.3%, 19% 77.2%, 18% 77%, 17.5% 76.1%, 11.8% 48.8%, 11.8% 48%);

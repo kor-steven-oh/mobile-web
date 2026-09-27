@@ -6,6 +6,7 @@ import {useState,useEffect,useRef,type ReactNode} from 'react';
 import {ArrowUpRight,ArrowRight,ArrowLeft,Bell,Bookmark,CalendarDays,Check,ChevronRight,Clock3,House,MapPin,Search,Sparkles,Ticket,UserRound,UsersRound,X} from 'lucide-react';
 import {sessions,halls,hallLocations,filterSessions,nextSavedSession,type Session} from './data';
 import RegistrationForm from './registration-form';
+import {loadParticipant,saveParticipant,PROFILE_KEY,SESSION_EXPIRED} from './participant-session';
 import HallPager from './hall-pager';
 import EventAttendance from './event-attendance';
 import {captureNfcLink,pendingNfcToken} from './nfc-pending';
@@ -39,29 +40,35 @@ export default function ConferenceApp({page}:{page:string}){
  useEffect(()=>{
   let active=true;
   captureNfcLink();
-  fetch('/api/registration',{credentials:'same-origin',cache:'no-store'})
-   .then(async response=>{if(!response.ok)throw new Error('로그인 상태를 확인하지 못했어요.');return response.json() as Promise<{profile:{id:string;name:string;phone:string}|null}>;})
-   .then(({profile:current})=>{
+  loadParticipant()
+   .then(current=>{
     if(!active)return;
-    if(current){const prefs=readPreferences(current);setSaved(prefs.sessions);setReady(true);setProfile(current);setAuthStatus('authenticated');try{localStorage.setItem('sdd2026-profile',JSON.stringify(current));}catch{}if(page==='start')router.replace(pendingNfcToken()?'/event':'/home');}
-    else{setProfile(null);setAuthStatus('anonymous');try{localStorage.removeItem('sdd2026-profile');}catch{}if(page!=='start')router.replace('/');}
+    if(current){const prefs=readPreferences(current);setSaved(prefs.sessions);setReady(true);setProfile(current);setAuthStatus('authenticated');if(page==='start')router.replace(pendingNfcToken()?'/event':'/home');}
+    else{setProfile(null);setAuthStatus('anonymous');saveParticipant(null);if(page!=='start')router.replace('/');}
    })
    .catch(()=>{if(active)setAuthStatus('error');});
   return()=>{active=false;};
  },[page,router]);
+ useEffect(()=>{
+  const expired=()=>{setProfile(null);setReady(false);setSaved([]);setAuthStatus('anonymous');setRegistrationOpen(true);router.replace('/');};
+  const changed=(event:StorageEvent)=>{if(event.key===PROFILE_KEY||event.key===null)window.location.reload();};
+  window.addEventListener(SESSION_EXPIRED,expired);
+  window.addEventListener('storage',changed);
+  return()=>{window.removeEventListener(SESSION_EXPIRED,expired);window.removeEventListener('storage',changed);};
+ },[router]);
  const login=async(name:string,phone:string)=>{
   const response=await fetch('/api/registration',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({name,phone})});
   const data=await response.json() as {profile?:{id:string;name:string;phone:string};error?:string};
   if(!response.ok||!data.profile)throw new Error(data.error||'로그인하지 못했어요. 다시 시도해주세요.');
   const prefs=readPreferences(data.profile);setSaved(prefs.sessions);setReady(true);setProfile(data.profile);setAuthStatus('authenticated');setRegistrationOpen(false);
-  try{localStorage.setItem('sdd2026-profile',JSON.stringify(data.profile));}catch{}
+  saveParticipant(data.profile);
   router.push(pendingNfcToken()?'/event':'/home');
  };
  const logout=async()=>{
   try{
    const response=await fetch('/api/registration',{method:'DELETE',credentials:'same-origin'});
    if(!response.ok)throw new Error();
-   try{localStorage.removeItem('sdd2026-profile');}catch{}
+   saveParticipant(null);
    setReady(false);setSaved([]);setProfile(null);setAuthStatus('anonymous');router.replace('/');
   }catch{setAuthStatus('error');}
  };
@@ -85,7 +92,7 @@ export default function ConferenceApp({page}:{page:string}){
  <div className="app-surface">{page==='start'?<main className="start-page"><header className="start-header"><span>SAMSUNG<br/>DEVELOPER DAY</span><span>DEVELOP<br/>CONNECT<br/>BUILD<br/>TOGETHER</span></header><div className="start-top-art"><Badge kind="code"/><Cube className="floating-one"/><span className="dotted-line"/></div><div className="start-main"><div className="start-logo-space"><div className="start-logo" role="img" aria-label="SDD 2026"><div className="start-symbol" aria-hidden="true"><img src="/sdd-original.png" alt="" width={772} height={768} fetchPriority="high" /></div><div className="start-year" aria-hidden="true"><span>2</span><span>0</span><span>2</span><span>6</span></div></div></div><h1>Developers<br/>Make a Brighter<br/>Tomorrow</h1></div><div className="start-bottom-art"><Badge kind="build"/><Badge kind="connect"/><Cube className="floating-two"/><span className="start-orbit" aria-hidden="true"/><div className="start-date"><span>2026. 10. 15 · 10:00</span><span>The UniverSE</span></div></div><button type="button" className="primary-button black" onClick={()=>profile?router.push('/home'):setRegistrationOpen(true)} disabled={authStatus==='checking'}>로그인하고 시작하기<ArrowRight size={22}/></button><footer className="start-footer"><span>IDEAS<br/>PEOPLE<br/>OPEN SOURCE<br/>A BRIGHTER TOMORROW <b>—</b></span></footer></main>:<>
  <header className="app-header">{page==='home'?<Link href="/home" className="wordmark">SDD <span>2026</span></Link>:<h1>{page==='program'?'Program':page==='event'?'Event':page==='speakers'?'Speakers':'My page'}</h1>}{page==='home'?(profile&&<p className="home-greeting">{profile.name}님 반갑습니다 :)</p>):<button className="icon-button" aria-label={page==='program'?'세션 검색':'공지사항'} onClick={()=>page==='program'?setSearchOpen(v=>!v):setNotice(true)}>{page==='program'?<Search size={24}/>:<><Bell size={23}/><span className="notification-dot"/></>}</button>}</header>
  <main className={`page-content ${page}`}>
- {page==='home'&&<><section className="home-hero"><h1>More<br/>Developers<br/><span>Together.</span></h1><Cube label="BUILD"/><p className="home-subtitle">Come Together. Share Build Connect</p></section><div className="event-date"><span className="event-date-item"><CalendarDays size={17}/>10월 15일 · 오전 10시</span><span className="event-date-item"><MapPin size={17}/>The UniverSE</span></div>{cardLoading?<div className="keynote-card next-session-card" aria-busy="true">{nextCardContent}</div>:nextSession?<button className="keynote-card next-session-card" onClick={()=>setSelected(nextSession)} aria-label={`${nextSession.title} 세션 상세보기`}>{nextCardContent}</button>:<Link href="/program" className="keynote-card next-session-card">{nextCardContent}</Link>}<div className="quick-links"><Link href="/program"><CalendarDays/><span>Program</span></Link><Link href="/speakers"><UsersRound/><span>Speakers</span></Link><button onClick={()=>setNotice(true)}><MapPin/><span>Location</span></button><Link href="/event"><Ticket/><span>Event</span></Link></div><SectionTitle href="/program">Discover what’s next</SectionTitle><Link href="/program" className="featured-card"><div className="mini-pattern"><i/><i/><i/><i/></div><div><span className="eyebrow">THE NEXT CHAPTER</span><h3>Build what’s next.</h3><p>영감을 현실로 만드는 세션</p></div><ChevronRight size={21}/></Link><SectionTitle>Lunch Concert</SectionTitle><figure className="lunch-concert-card"><div className="lunch-concert-photo"><Image src="/concert.png" alt="Lunch Concert 출연진 단체 사진" width={1926} height={822} unoptimized/></div><figcaption><span className="eyebrow">MUSIC & CONNECTION</span><h3>음악과 함께하는 점심시간</h3><p>잠시 쉬어가며 즐기는 Lunch Concert</p><div className="lunch-concert-time"><Clock3 size={16} aria-hidden="true"/><span>12:00–13:00</span></div></figcaption></figure><p className="sample-note">강연 일정은 2026년 10월 15일 기준입니다.</p></>}
+ {page==='home'&&<><section className="home-hero"><h1>More<br/>Developers<br/><span>Together.</span></h1><Cube label="BUILD"/><p className="home-subtitle">Come Together. Share Build Connect</p></section><div className="event-date"><span className="event-date-item"><CalendarDays size={17}/>10월 15일 · 오전 10시</span><span className="event-date-item"><MapPin size={17}/>The UniverSE</span></div>{cardLoading?<div className="keynote-card next-session-card" aria-busy="true">{nextCardContent}</div>:nextSession?<button className="keynote-card next-session-card" onClick={()=>setSelected(nextSession)} aria-label={`${nextSession.title} 세션 상세보기`}>{nextCardContent}</button>:<Link href="/program" className="keynote-card next-session-card">{nextCardContent}</Link>}<div className="quick-links"><Link href="/program"><CalendarDays/><span>Program</span></Link><Link href="/speakers"><UsersRound/><span>Speakers</span></Link><button onClick={()=>setNotice(true)}><MapPin/><span>Location</span></button><Link href="/event"><Ticket/><span>Event</span></Link></div><SectionTitle href="/program">Discover what’s next</SectionTitle><Link href="/program" className="featured-card"><div className="mini-pattern"><i/><i/><i/><i/></div><div><span className="eyebrow">THE NEXT CHAPTER</span><h3>Build what’s next.</h3><p>영감을 현실로 만드는 세션</p></div><ChevronRight size={21}/></Link><SectionTitle>Lunch Concert</SectionTitle><figure className="lunch-concert-card"><div className="lunch-concert-photo"><Image src="/concert.webp" alt="Lunch Concert 출연진 단체 사진" width={1926} height={822} unoptimized/></div><figcaption><span className="eyebrow">MUSIC & CONNECTION</span><h3>음악과 함께하는 점심시간</h3><p>잠시 쉬어가며 즐기는 Lunch Concert</p><div className="lunch-concert-time"><Clock3 size={16} aria-hidden="true"/><span>12:00–13:00</span></div></figcaption></figure><p className="sample-note">강연 일정은 2026년 10월 15일 기준입니다.</p></>}
  {page==='program'&&<>{searchOpen&&<div className="search-field"><Search size={19}/><input autoFocus aria-label="세션명 또는 연사 검색" placeholder="세션명 또는 연사 검색" value={search} onChange={e=>setSearch(e.target.value)}/>{search&&<button aria-label="검색어 지우기" onClick={()=>setSearch('')}><X size={17}/></button>}</div>}<div className="room-selector" aria-label="강연장 선택">{halls.map(h=><button key={h} onClick={()=>setHall(h)} className={hall===h?'active':''} aria-label={h} aria-pressed={hall===h}><b>{h.split(' ')[0]}</b><span>{h.split(' ')[1]}</span></button>)}</div><p className="swipe-hint">좌우로 밀어 다른 강연장을 둘러보세요 <span aria-hidden="true">↔</span></p><span className="sr-only" role="status">현재 강연장 {hall}</span><HallPager hall={hall} onHallChange={setHall}>{room=>{const shown=filterSessions(room,search);return <><div className="schedule-heading"><span>{room}<b>{shown.length} sessions</b></span><span><Clock3 size={12}/> KST</span></div><div className="session-list">{shown.map(s=>sessionRow(s))}</div>{shown.length===0&&<div className="empty-state"><Search/><h3>검색된 세션이 없어요</h3><p>다른 검색어 또는 강연장을 선택해주세요.</p><button onClick={()=>setSearch('')}>필터 초기화</button></div>}</>;}}</HallPager><p className="sample-note">2026년 10월 15일 강연 프로그램</p></>}
  {page==='speakers'&&<><Link href="/home" className="speakers-back"><ArrowLeft size={16}/> Home</Link><div className="speakers-heading"><h2>강연자 소개</h2><span>총 {sessions.length}명 · 가나다순</span></div><ul className="speakers-list">{[...sessions].sort((a,b)=>a.speaker.localeCompare(b.speaker,'ko')).map(s=><li key={s.id}><button className="speaker-card" onClick={()=>setSelected(s)} aria-label={`${s.speaker} · ${s.title} 세션 상세보기`}><span className="speaker-card-avatar" aria-hidden="true"><UserRound size={23}/></span><span className="speaker-card-info"><strong>{s.speaker}</strong><span className="speaker-card-department">{s.role}</span><span className="speaker-card-title">{s.title}</span></span><ChevronRight size={18} aria-hidden="true"/></button></li>)}</ul></>}
  {page==='event'&&<EventAttendance participantId={authStatus==='authenticated'?profile?.id:undefined}/>}

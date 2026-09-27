@@ -1,0 +1,1 @@
+CREATE INDEX `admin_audit_registration_created` ON `admin_audit` (`registration_id`,`created_at`);

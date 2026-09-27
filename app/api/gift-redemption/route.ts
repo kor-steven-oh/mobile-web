@@ -29,8 +29,7 @@ export async function POST(request: Request) {
       input = JSON.parse(new TextDecoder().decode(bytes));
     } catch { return error('STAFF 인증번호를 확인해주세요.', 400); }
     if (!input || typeof input !== 'object' || !('pin' in input) || typeof input.pin !== 'string') return error('STAFF 인증번호 4자리를 입력해주세요.', 400);
-    const { env } = await import('cloudflare:workers');
-    return Response.json(await redeemGift(await getD1(), profile.id, input.pin, env.STAFF_GIFT_PIN_HASH, request.headers.get('cf-connecting-ip') || 'unknown'), { headers });
+    return Response.json(await redeemGift(await getD1(), profile.id, input.pin), { headers });
   } catch (cause) {
     if (cause instanceof GiftRedemptionError) return error(cause.message, cause.status);
     return error('수령 처리를 완료하지 못했습니다. 다시 시도해주세요.', 503);

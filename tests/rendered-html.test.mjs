@@ -116,3 +116,22 @@ test('raffle entry is protected and shown as an explicit application button',asy
  assert.match(html,/응모하기/);
  assert.doesNotMatch(html,/자동 발급돼요|SDD26-/);
 });
+
+
+test('registration stops reading oversized streaming bodies before consuming the entire request', async () => {
+ let chunks = 0;
+ const body = new ReadableStream({
+  pull(controller) { chunks++; controller.enqueue(new Uint8Array(600)); if (chunks === 100) controller.close(); },
+ });
+ const response = await worker.fetch(new Request('http://localhost/api/registration', { method: 'POST', body, duplex: 'half' }), {}, {});
+ assert.equal(response.status, 413);
+ // The router may prefetch a few chunks through its cloned request stream.
+ assert.ok(chunks < 10);
+});
+
+test('registration body limit counts UTF-8 bytes instead of characters', async () => {
+ const body = JSON.stringify({ name: '가'.repeat(400), phone: '01012345678' });
+ assert.ok(body.length < 1024);
+ const response = await worker.fetch(new Request('http://localhost/api/registration', { method: 'POST', body }), {}, {});
+ assert.equal(response.status, 413);
+});

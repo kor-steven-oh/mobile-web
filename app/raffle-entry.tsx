@@ -1,5 +1,7 @@
 'use client';
 
+import { participantFetch } from './participant-session';
+
 import { useState } from 'react';
 import { Check, Ticket } from 'lucide-react';
 import type { RaffleEntry } from '../db/raffle';
@@ -13,7 +15,7 @@ export default function RaffleEntryCard({ eligible, entry, onEntered }: Props) {
     if (busy || !eligible || entry) return;
     setBusy(true); setError('');
     try {
-      const response = await fetch('/api/raffle-entry', { method: 'POST', credentials: 'same-origin' });
+      const response = await participantFetch('/api/raffle-entry', { method: 'POST', credentials: 'same-origin' });
       const result = await response.json() as { entry?: RaffleEntry; error?: string };
       if (!response.ok || !result.entry) throw new Error(result.error || '응모권을 발급하지 못했습니다.');
       onEntered(result.entry);

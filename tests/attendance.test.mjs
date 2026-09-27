@@ -3,7 +3,8 @@ import test from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { attendanceStatus, hashNfcToken, verifyAttendance } from '../db/attendance.ts';
-import { giftPinHash, redeemGift } from '../db/gifts.ts';
+import { redeemGift } from '../db/gifts.ts';
+import { login, digest } from '../admin/auth.ts';
 import { enterRaffle } from '../db/raffle.ts';
 import { listUsers, resetUser, userDetail } from '../db/admin.ts';
 
@@ -22,6 +23,7 @@ class SqliteD1 {
       sql, values: [],
       bind(...values) { this.values = values; return this; },
       async first() { return database.prepare(sql).get(...this.values) ?? null; },
+      async run() { return database.prepare(sql).run(...this.values); },
     };
   }
   async batch(statements) {
@@ -145,17 +147,16 @@ test('strict time policy cannot be bypassed with a supplied slot', async t => {
 
 test('gift redemption requires two sessions and the correct staff PIN, and preserves raffle tickets', async t => {
   const { db, tokens, time } = await fixture(t);
-  const hash = await giftPinHash('5555');
-  await assert.rejects(redeemGift(db, 'p1', '5555', hash, 'test-ip'), { status: 403 });
+  await assert.rejects(redeemGift(db, 'p1', '5555'), { status: 403 });
   await verifyAttendance(db, 'p1', tokens['101'], time(1));
-  await assert.rejects(redeemGift(db, 'p1', '5555', hash, 'test-ip'), { status: 403 });
+  await assert.rejects(redeemGift(db, 'p1', '5555'), { status: 403 });
   for (let slot=2;slot<=4;slot++) await verifyAttendance(db, 'p1', tokens['101'], time(slot));
-  await assert.rejects(redeemGift(db, 'p1', '1234', hash, 'test-ip'), { status: 403 });
+  await assert.rejects(redeemGift(db, 'p1', '1234'), { status: 403 });
   assert.equal((await attendanceStatus(db,'p1')).rewards.find(r=>r.kind==='gift').redeemedAt,null);
-  const result=await redeemGift(db,'p1','5555',hash,'test-ip',time(5));
+  const result=await redeemGift(db,'p1','5555',time(5));
   assert.equal(result.alreadyRedeemed,false);
   assert.equal(result.reward.redeemedAt,time(5));
-  const repeated=await redeemGift(db,'p1','5555',hash,'test-ip',time(5)+1000);
+  const repeated=await redeemGift(db,'p1','5555',time(5)+1000);
   assert.equal(repeated.alreadyRedeemed,true);
   assert.equal(repeated.reward.redeemedAt,time(5));
   assert.equal((await attendanceStatus(db,'p1')).rewards.find(r=>r.kind==='ticket').redeemedAt,null);
@@ -164,25 +165,42 @@ test('gift redemption requires two sessions and the correct staff PIN, and prese
 test('parallel gift redemption marks only one request as newly redeemed', async t => {
   const { db, tokens, time } = await fixture(t);
   for (let slot=1;slot<=2;slot++) await verifyAttendance(db,'p1',tokens['101'],time(slot));
-  const hash=await giftPinHash('5555');
-  const results=await Promise.all([redeemGift(db,'p1','5555',hash,'ip',time(3)),redeemGift(db,'p1','5555',hash,'ip',time(3)+1)]);
+  const results=await Promise.all([redeemGift(db,'p1','5555',time(3)),redeemGift(db,'p1','5555',time(3)+1)]);
   assert.equal(results.filter(r=>!r.alreadyRedeemed).length,1);
   assert.equal(results[0].reward.redeemedAt,results[1].reward.redeemedAt);
 });
 
-test('gift PIN attempts are limited persistently and recover after 15 minutes', async t => {
+test('wrong gift PINs never lock the participant or persist attempts', async t => {
   const { db, tokens, time } = await fixture(t);
-  for(let slot=1;slot<=2;slot++) await verifyAttendance(db,'p1',tokens['101'],time(slot));
-  const hash=await giftPinHash('5555');
-  const now=time(3);
-  await assert.rejects(redeemGift(db,'p1','5555',undefined,'ip',now),{status:503});
-  await assert.rejects(redeemGift(db,'p1','55',hash,'ip',now),{status:400});
-  for(let i=0;i<5;i++) await assert.rejects(redeemGift(db,'p1','0000',hash,'ip',now),{status:403});
-  await assert.rejects(redeemGift(db,'p1','5555',hash,'ip',now+1),{status:429});
-  assert.equal((await attendanceStatus(db,'p1')).rewards[0].redeemedAt,null);
-  assert.equal((await redeemGift(db,'p1','5555',hash,'ip',now+15*60*1000)).alreadyRedeemed,false);
+  for (const slot of [1,2]) await verifyAttendance(db, 'p1', tokens['101'], time(slot));
+  const now = time(3);
+  const before = db.sql.prepare('SELECT total_changes() AS n').get().n;
+  await assert.rejects(redeemGift(db, 'p1', '55', now), { status: 400 });
+  for (let i=0; i<40; i++) await assert.rejects(redeemGift(db, 'p1', '0000', now), { status: 403 });
+  assert.equal(db.sql.prepare('SELECT total_changes() AS n').get().n, before);
+  assert.equal((await attendanceStatus(db,'p1')).rewards[0].redeemedAt, null);
+  const result = await redeemGift(db, 'p1', '5555', now);
+  assert.equal(result.alreadyRedeemed, false);
+  assert.equal(result.reward.redeemedAt, now);
+  assert.equal(db.sql.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name='gift_pin_attempts'").get().n, 0);
 });
 
+test('500 eligible participants can redeem without shared venue IP limits', async t => {
+  const { db, time } = await fixture(t);
+  const now = time(3);
+  const ids = Array.from({ length: 500 }, (_, i) => `guest-${i}`);
+  for (const [i, id] of ids.entries()) {
+    db.sql.prepare('INSERT INTO registrations(id,name,phone) VALUES (?,?,?)').run(id, `참가자${i}`, `010${String(i).padStart(8,'0')}`);
+    for (const slot of [1,2]) db.sql.prepare('INSERT INTO attendance VALUES (?,?,?,?,?)').run(id, slot, 10100 + slot, '101', now);
+    db.sql.prepare('INSERT INTO event_rewards(id,registration_id,kind,issued_at) VALUES (?,?,?,?)').run(`gift-${i}`, id, 'gift', now);
+  }
+  const results = await Promise.all(ids.map(id => redeemGift(db, id, '5555', now)));
+  assert.equal(results.filter(result => !result.alreadyRedeemed).length, 500);
+  assert.equal(db.sql.prepare('SELECT COUNT(*) AS count FROM event_rewards WHERE redeemed_at IS NOT NULL').get().count, 500);
+  const repeated = await redeemGift(db, ids[0], '5555', now + 1);
+  assert.equal(repeated.alreadyRedeemed, true);
+  assert.equal(repeated.reward.redeemedAt, now);
+});
 
 test('raffle requires four sessions and an explicit request; failed and repeated attempts consume no numbers', async t => {
   const { db, tokens, time } = await fixture(t);
@@ -223,7 +241,7 @@ test('admin reset preserves identity and raffle number, removes eligibility, and
  const {db,tokens,time}=await fixture(t);
  for(let slot=1;slot<=4;slot++)await verifyAttendance(db,'p1',tokens['101'],time(slot));
  const entry=(await enterRaffle(db,'p1',time(4))).entry;
- await redeemGift(db,'p1','5555',await giftPinHash('5555'),'ip',time(4));
+ await redeemGift(db,'p1','5555',time(4));
  await assert.rejects(resetUser(db,'p1','admin',{action:'participation',reason:'테스트',confirmName:'틀린이름'}),{status:400});
  assert.equal((await attendanceStatus(db,'p1')).records.length,4);
  const detail=await resetUser(db,'p1','admin',{action:'participation',reason:'참가자 요청',confirmName:'테스트'},time(5));
@@ -247,7 +265,7 @@ test('admin can reset one session or gift receipt without altering unrelated par
  const {db,tokens,time}=await fixture(t);
  for(let slot=1;slot<=5;slot++)await verifyAttendance(db,'p1',tokens['101'],time(slot));
  await enterRaffle(db,'p1',time(5));
- await redeemGift(db,'p1','5555',await giftPinHash('5555'),'ip',time(5));
+ await redeemGift(db,'p1','5555',time(5));
  await resetUser(db,'p1','admin',{action:'gift',reason:'오입력 정정',confirmName:'테스트'},time(5));
  let detail=await userDetail(db,'p1');assert.equal(detail.user.giftRedeemedAt,null);assert.equal(detail.user.attendanceCount,5);
  await resetUser(db,'p1','admin',{action:'session',slot:5,reason:'잘못된 인증',confirmName:'테스트'},time(5));
@@ -257,4 +275,26 @@ test('admin can reset one session or gift receipt without altering unrelated par
  assert.equal((await userDetail(db,'p2')).user.attendanceCount,0);
  const list=await listUsers(db,'010-0000-0000',1);assert.equal(list.total,1);assert.equal(list.users[0].id,'p1');
  assert.equal((await listUsers(db,'%',1)).total,0);
+});
+
+
+test('valid admin logins sharing one IP do not consume limits or get locked out', async t => {
+  const db = new SqliteD1();
+  t.after(() => db.sql.close());
+  const hash = await digest('1111');
+  for (let i = 0; i < 40; i++) assert.ok((await login(db, '1111', hash, 'venue')).token);
+  assert.equal(db.sql.prepare('SELECT COUNT(*) AS n FROM admin_login_attempts').get().n, 0);
+  for (let i = 0; i < 6; i++) {
+    assert.equal((await login(db, 'wrong', hash, 'venue')).status, i < 5 ? 401 : 429);
+  }
+  assert.ok((await login(db, '1111', hash, 'venue')).token);
+  assert.equal(db.sql.prepare('SELECT COUNT(*) AS n FROM admin_sessions').get().n, 41);
+});
+
+test('admin history uses the participant/date index without a temporary sort', t => {
+  const db = new SqliteD1();
+  t.after(() => db.sql.close());
+  const plan = db.sql.prepare('EXPLAIN QUERY PLAN SELECT id,action,reason,created_at FROM admin_audit WHERE registration_id=? ORDER BY created_at DESC LIMIT 20').all('p1').map(row => row.detail).join(' ');
+  assert.match(plan, /USING INDEX admin_audit_registration_created/);
+  assert.doesNotMatch(plan, /SCAN admin_audit|TEMP B-TREE/);
 });

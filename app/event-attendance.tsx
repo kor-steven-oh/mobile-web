@@ -1,5 +1,7 @@
 'use client';
 
+import { participantFetch } from './participant-session';
+
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Gift, Nfc, RefreshCw, Ticket } from 'lucide-react';
 import { sessions } from './data';
@@ -56,10 +58,11 @@ export default function EventAttendance({ participantId }: { participantId?: str
           // With location checks paused, permission prompts and timeouts never delay attendance.
           const location = attendancePolicy.enforceLocation ? await locationRequest : undefined;
           if (!active) return;
-          const response = await fetch('/api/attendance', {
+          const response = await participantFetch('/api/attendance', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin', signal: controller.signal, body: JSON.stringify({ token, location, slot }),
           });
+          if (response.status === 401) return;
           const result = await response.json() as AttendanceCheckinResult & { error?: string };
           if (!active) return;
           if (response.ok) {
@@ -78,7 +81,7 @@ export default function EventAttendance({ participantId }: { participantId?: str
             setError(cause instanceof Error ? cause.message : '현재 위치를 확인하지 못했습니다.');
           }
         }
-        const response = await fetch('/api/attendance', { credentials: 'same-origin', cache: 'no-store', signal: controller.signal });
+        const response = await participantFetch('/api/attendance', { credentials: 'same-origin', cache: 'no-store', signal: controller.signal });
         const result = await response.json() as AttendanceStatus & { error?: string };
         if (!response.ok) throw new Error(result.error || '인증 현황을 불러오지 못했습니다.');
         if (active) {

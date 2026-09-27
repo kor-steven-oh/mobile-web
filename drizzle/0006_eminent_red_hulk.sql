@@ -1,0 +1,1 @@
+DROP TABLE `gift_pin_attempts`;

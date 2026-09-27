@@ -60,7 +60,6 @@ export async function resetUser(db: D1Database, id: string, actor: string, input
   }
   if (input.action === 'gift') statements.push(db.prepare("UPDATE event_rewards SET redeemed_at=NULL WHERE registration_id=? AND kind='gift'").bind(id));
   if (input.action === 'raffle') statements.push(db.prepare('UPDATE raffle_entries SET voided_at=COALESCE(voided_at,?) WHERE registration_id=?').bind(now,id));
-  statements.push(db.prepare('DELETE FROM gift_pin_attempts WHERE key=?').bind(`participant:${id}`));
   await db.batch(statements);
   return userDetail(db,id);
 }

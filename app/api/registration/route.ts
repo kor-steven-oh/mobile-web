@@ -18,9 +18,21 @@ export async function POST(request: Request) {
 
   let input: unknown;
   try {
-    const text = await request.text();
-    if (text.length > 1024) return Response.json({ error: '입력값이 너무 깁니다.' }, { status: 413, headers: noStore });
-    input = JSON.parse(text);
+    const reader = request.body?.getReader();
+    if (!reader) return Response.json({ error: '입력값을 확인해주세요.' }, { status: 400, headers: noStore });
+    const body = new Uint8Array(1024);
+    let length = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (length + value.byteLength > body.byteLength) {
+        await reader.cancel();
+        return Response.json({ error: '입력값이 너무 깁니다.' }, { status: 413, headers: noStore });
+      }
+      body.set(value, length);
+      length += value.byteLength;
+    }
+    input = JSON.parse(new TextDecoder().decode(body.subarray(0, length)));
   } catch {
     return Response.json({ error: '입력값을 확인해주세요.' }, { status: 400, headers: noStore });
   }

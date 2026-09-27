@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, foreignKey, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { check, foreignKey, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const registrations = sqliteTable('registrations', {
   id: text('id').primaryKey(),
@@ -59,12 +59,6 @@ export const eventRewards = sqliteTable('event_rewards', {
   check('event_rewards_valid_kind', sql`${table.kind} IN ('gift', 'ticket')`),
 ]);
 
-export const giftPinAttempts = sqliteTable('gift_pin_attempts', {
-  key: text('key').primaryKey(),
-  attempts: integer('attempts').notNull(),
-  windowStartedAt: integer('window_started_at').notNull(),
-});
-
 export const raffleEntries = sqliteTable('raffle_entries', {
   voidedAt: integer('voided_at'),
   number: integer('number').primaryKey({ autoIncrement: true }),
@@ -91,4 +85,4 @@ export const adminAudit = sqliteTable('admin_audit', {
   reason: text('reason').notNull(),
   snapshot: text('snapshot').notNull(),
   createdAt: integer('created_at').notNull(),
-});
+}, table => [index('admin_audit_registration_created').on(table.registrationId, table.createdAt)]);

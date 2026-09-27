@@ -1,5 +1,7 @@
 'use client';
 
+import { participantFetch } from './participant-session';
+
 import { useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { Check, Gift, X } from 'lucide-react';
@@ -36,7 +38,7 @@ export default function GiftRedemption({ gift, onRedeemed }: Props) {
     if (!/^[0-9]{4}$/.test(pin)) { setError('STAFF 인증번호 4자리를 입력해주세요.'); return; }
     setBusy(true); setError('');
     try {
-      const response = await fetch('/api/gift-redemption', {
+      const response = await participantFetch('/api/gift-redemption', {
         method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin }),
       });
