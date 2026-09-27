@@ -40,8 +40,8 @@ const adminWorker = {
       if(match&&!match[2]&&request.method==='GET')return json(await userDetail(env.DB,match[1]));
       if(match?.[2]&&request.method==='POST') {
         const data=await input(request);
-        if(typeof data.action!=='string'||typeof data.reason!=='string'||typeof data.confirmName!=='string')throw new AdminError('초기화 항목과 사유, 확인 이름을 입력해주세요.');
-        return json(await resetUser(env.DB,match[1],admin.id,{action:data.action as ResetAction,reason:data.reason,confirmName:data.confirmName,slot:typeof data.slot==='number'?data.slot:undefined}));
+        if(typeof data.action!=='string')throw new AdminError('초기화 항목을 선택해주세요.');
+        return json(await resetUser(env.DB,match[1],admin.id,{action:data.action as ResetAction,slot:typeof data.slot==='number'?data.slot:undefined}));
       }
       return json({error:'요청을 찾을 수 없습니다.'},404);
     } catch(cause) {

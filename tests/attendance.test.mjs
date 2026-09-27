@@ -242,9 +242,9 @@ test('admin reset preserves identity and raffle number, removes eligibility, and
  for(let slot=1;slot<=4;slot++)await verifyAttendance(db,'p1',tokens['101'],time(slot));
  const entry=(await enterRaffle(db,'p1',time(4))).entry;
  await redeemGift(db,'p1','5555',time(4));
- await assert.rejects(resetUser(db,'p1','admin',{action:'participation',reason:'테스트',confirmName:'틀린이름'}),{status:400});
+ await assert.rejects(resetUser(db,'p1','admin',{action:'unknown'}),{status:400});
  assert.equal((await attendanceStatus(db,'p1')).records.length,4);
- const detail=await resetUser(db,'p1','admin',{action:'participation',reason:'참가자 요청',confirmName:'테스트'},time(5));
+ const detail=await resetUser(db,'p1','admin',{action:'participation'},time(5));
  assert.equal(detail.user.attendanceCount,0);
  assert.equal(detail.user.name,'테스트');
  assert.equal(detail.user.giftIssued,0);
@@ -266,11 +266,11 @@ test('admin can reset one session or gift receipt without altering unrelated par
  for(let slot=1;slot<=5;slot++)await verifyAttendance(db,'p1',tokens['101'],time(slot));
  await enterRaffle(db,'p1',time(5));
  await redeemGift(db,'p1','5555',time(5));
- await resetUser(db,'p1','admin',{action:'gift',reason:'오입력 정정',confirmName:'테스트'},time(5));
+ await resetUser(db,'p1','admin',{action:'gift'},time(5));
  let detail=await userDetail(db,'p1');assert.equal(detail.user.giftRedeemedAt,null);assert.equal(detail.user.attendanceCount,5);
- await resetUser(db,'p1','admin',{action:'session',slot:5,reason:'잘못된 인증',confirmName:'테스트'},time(5));
+ await resetUser(db,'p1','admin',{action:'session',slot:5},time(5));
  detail=await userDetail(db,'p1');assert.equal(detail.user.attendanceCount,4);assert.equal(detail.user.raffleVoidedAt,null);
- await resetUser(db,'p1','admin',{action:'session',slot:4,reason:'잘못된 인증',confirmName:'테스트'},time(5));
+ await resetUser(db,'p1','admin',{action:'session',slot:4},time(5));
  detail=await userDetail(db,'p1');assert.equal(detail.user.attendanceCount,3);assert.ok(detail.user.raffleVoidedAt);
  assert.equal((await userDetail(db,'p2')).user.attendanceCount,0);
  const list=await listUsers(db,'010-0000-0000',1);assert.equal(list.total,1);assert.equal(list.users[0].id,'p1');
@@ -297,4 +297,19 @@ test('admin history uses the participant/date index without a temporary sort', t
   const plan = db.sql.prepare('EXPLAIN QUERY PLAN SELECT id,action,reason,created_at FROM admin_audit WHERE registration_id=? ORDER BY created_at DESC LIMIT 20').all('p1').map(row => row.detail).join(' ');
   assert.match(plan, /USING INDEX admin_audit_registration_created/);
   assert.doesNotMatch(plan, /SCAN admin_audit|TEMP B-TREE/);
+});
+
+
+test('admin raffle and attendance resets run without confirmation fields and retain audit history', async t => {
+ const {db,tokens,time}=await fixture(t);
+ for(let slot=1;slot<=4;slot++)await verifyAttendance(db,'p1',tokens['101'],time(slot));
+ const entry=(await enterRaffle(db,'p1',time(4))).entry;
+ let detail=await resetUser(db,'p1','admin',{action:'raffle'},time(4));
+ assert.equal(detail.user.raffleNumber,entry.number);
+ assert.equal(detail.user.raffleVoidedAt,time(4));
+ assert.equal(detail.user.attendanceCount,4);
+ detail=await resetUser(db,'p1','admin',{action:'attendance'},time(5));
+ assert.equal(detail.user.attendanceCount,0);
+ assert.equal(detail.audit.length,2);
+ assert.ok(detail.audit.every(item=>item.reason==='관리자 직접 초기화'));
 });
