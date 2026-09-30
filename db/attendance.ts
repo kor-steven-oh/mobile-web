@@ -1,6 +1,6 @@
 import type { RaffleEntry } from './raffle';
 export type AttendanceRecord = { slot: number; sessionId: number; title: string; room: string; verifiedAt: number };
-export type EventReward = { id: string; kind: 'gift' | 'ticket'; issuedAt: number; redeemedAt: number | null };
+export type EventReward = { id: string; kind: 'gift' | 'gift3' | 'ticket'; issuedAt: number; redeemedAt: number | null };
 export type AttendanceStatus = { records: AttendanceRecord[]; rewards: EventReward[]; raffleEntry: RaffleEntry | null };
 
 export type AttendanceCheckinResult = AttendanceStatus & { checkin: { slot: number; isNew: boolean } };
@@ -58,14 +58,14 @@ export async function verifyAttendance(db: D1Database, registrationId: string, t
     db.prepare(`INSERT INTO attendance (registration_id, slot, session_id, tag_id, verified_at)
       SELECT ?, ?, ?, id, ? FROM nfc_tags WHERE id = ? AND active = 1
       ON CONFLICT(registration_id, slot) DO NOTHING RETURNING slot`).bind(registrationId, session.slot, session.id, now, session.tagId),
-    ...(['gift', 'ticket'] as const).map(kind => db.prepare(`
+    ...(['gift', 'gift3', 'ticket'] as const).map(kind => db.prepare(`
       INSERT INTO event_rewards (id, registration_id, kind, issued_at)
       SELECT ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM attendance WHERE registration_id = ?) >= ?
       ON CONFLICT(registration_id, kind) DO NOTHING
-    `).bind(crypto.randomUUID(), registrationId, kind, now, registrationId, kind === 'gift' ? 2 : 4)),
+    `).bind(crypto.randomUUID(), registrationId, kind, now, registrationId, kind === 'gift' ? 2 : kind === 'gift3' ? 3 : 4)),
     ...statusQueries(db, registrationId),
   ]);
-  const status = statusFromResults(inserted.slice(3));
+  const status = statusFromResults(inserted.slice(4));
   const recorded = status.records.find(record => record.slot === session.slot);
   if (!recorded) throw new AttendanceError('인증하지 못했습니다. 입구의 NFC 태그를 다시 확인해주세요.');
   if (recorded.sessionId !== session.id) throw new AttendanceError('이 시간대에는 이미 다른 강연을 인증했습니다. 시간대별 1개만 인증할 수 있습니다.');

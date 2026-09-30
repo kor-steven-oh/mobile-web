@@ -3,8 +3,8 @@ import test from 'node:test';
 import {sessions,halls,hallLocations,filterSessions,nextSavedSession} from '../app/data.ts';
 const {default:worker}=await import('../dist/server/index.js');
 const render=path=>worker.fetch(new Request(`http://localhost${path}`,{headers:{accept:'text/html'}}),{ASSETS:{fetch:async()=>new Response('Not found',{status:404})}},{waitUntil(){},passThroughOnException(){}});
-for(const [path,content] of [['/','로그인하고 시작하기'],['/home','MY NEXT SESSION'],['/program','101 AP'],['/event','나의 수강 인증'],['/mypage','저장한 세션']]){
- test(`renders ${path} with site metadata and navigation`,async()=>{const response=await render(path);assert.equal(response.status,200);const html=await response.text();assert.ok(html.includes(content));assert.match(html,/<title>SDD 2026/);assert.doesNotMatch(html,/codex-preview|react-loading-skeleton/);if(path!=='/')for(const route of ['home','program','event','mypage'])assert.ok(html.includes(`href="/${route}"`));});
+for(const [path,content] of [['/','로그인하고 시작하기'],['/home','MY NEXT SESSION'],['/program','101 AP'],['/gift','나의 수강 인증'],['/event','6개의 체험존'],['/mypage','저장한 세션']]){
+ test(`renders ${path} with site metadata and navigation`,async()=>{const response=await render(path);assert.equal(response.status,200);const html=await response.text();assert.ok(html.includes(content));assert.match(html,/<title>SDD 2026/);assert.doesNotMatch(html,/codex-preview|react-loading-skeleton/);if(path!=='/')for(const route of ['home','program','gift','event','mypage'])assert.ok(html.includes(`href="/${route}"`));});
 }
 test('unknown page returns 404',async()=>assert.equal((await render('/missing')).status,404));
 test('admin route renders its own screen without participant navigation',async()=>{
@@ -76,10 +76,13 @@ test('next session handles empty, expired, unknown and simultaneous bookmarks',(
  assert.equal(nextSavedSession([10701,10101],before)?.id,10101);
 });
 
-test('event page explains attendance thresholds and renders five slots',async()=>{
- const html=await (await render('/event')).text();
+test('gift page explains attendance thresholds and renders five slots',async()=>{
+ const html=await (await render('/gift')).text();
  assert.match(html,/나의 수강 인증/);
- assert.match(html,/2개 이상 인증/);
+ assert.match(html,/2<!-- -->개 이상 인증/);
+ assert.match(html,/3<!-- -->개 이상 인증/);
+ assert.match(html,/추가 참여선물/);
+ assert.match(html,/3개 인증 후 수령 가능/);
  assert.match(html,/4개 이상 인증/);
  assert.match(html,/럭키드로우 응모권/);
  assert.equal((html.match(/class="stamp-circle"/g)||[]).length,5);
@@ -101,7 +104,7 @@ test('gift redemption requires login and same-origin requests',async()=>{
  assert.equal(anon.status,401);
  const foreign=await worker.fetch(new Request(url,{method:'POST',headers:{origin:'https://example.com'}}),{},{});
  assert.equal(foreign.status,403);
- const html=await (await render('/event')).text();
+ const html=await (await render('/gift')).text();
  assert.match(html,/2개 인증 후 수령 가능/);
  assert.doesNotMatch(html,/5555/);
 });
@@ -112,7 +115,7 @@ test('raffle entry is protected and shown as an explicit application button',asy
  assert.equal(anon.status,401);
  const foreign=await worker.fetch(new Request(url,{method:'POST',headers:{origin:'https://example.com'}}),{},{});
  assert.equal(foreign.status,403);
- const html=await (await render('/event')).text();
+ const html=await (await render('/gift')).text();
  assert.match(html,/응모하기/);
  assert.doesNotMatch(html,/자동 발급돼요|SDD26-/);
 });
@@ -134,4 +137,13 @@ test('registration body limit counts UTF-8 bytes instead of characters', async (
  assert.ok(body.length < 1024);
  const response = await worker.fetch(new Request('http://localhost/api/registration', { method: 'POST', body }), {}, {});
  assert.equal(response.status, 413);
+});
+
+test('event zone is separate from gift attendance and rewards',async()=>{
+ const html=await (await render('/event')).text();
+ assert.match(html,/<h1>Event<\/h1>/);
+ assert.match(html,/6개의 체험존/);
+ assert.doesNotMatch(html,/나의 수강 인증|stamp-circle|응모하기/);
+ const gift=await (await render('/gift')).text();
+ assert.match(gift,/<h1>Gift<\/h1>/);
 });

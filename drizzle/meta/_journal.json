@@ -57,6 +57,13 @@
       "when": 1790518008487,
       "tag": "0007_polite_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790773266931,
+      "tag": "0008_freezing_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

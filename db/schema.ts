@@ -51,12 +51,12 @@ export const attendance = sqliteTable('attendance', {
 export const eventRewards = sqliteTable('event_rewards', {
   id: text('id').primaryKey(),
   registrationId: text('registration_id').notNull().references(() => registrations.id),
-  kind: text('kind', { enum: ['gift', 'ticket'] }).notNull(),
+  kind: text('kind', { enum: ['gift', 'gift3', 'ticket'] }).notNull(),
   issuedAt: integer('issued_at').notNull(),
   redeemedAt: integer('redeemed_at'),
 }, table => [
   uniqueIndex('event_rewards_participant_kind').on(table.registrationId, table.kind),
-  check('event_rewards_valid_kind', sql`${table.kind} IN ('gift', 'ticket')`),
+  check('event_rewards_valid_kind', sql`${table.kind} IN ('gift', 'gift3', 'ticket')`),
 ]);
 
 export const raffleEntries = sqliteTable('raffle_entries', {

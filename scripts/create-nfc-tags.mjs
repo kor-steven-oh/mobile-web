@@ -11,7 +11,7 @@ const output = resolve(outputArgument);
 mkdirSync(output, { mode: 0o700 });
 const tags = ['101', '107', '201', '206', '208'].map(room => {
   const token = randomBytes(32).toString('hex');
-  return { id: randomUUID(), room, hash: createHash('sha256').update(token).digest('hex'), url: `${url.origin}/event#checkin=${token}` };
+  return { id: randomUUID(), room, hash: createHash('sha256').update(token).digest('hex'), url: `${url.origin}/gift#checkin=${token}` };
 });
 writeFileSync(resolve(output, 'tags.json'), JSON.stringify(tags.map(({ id, room, url }) => ({ id, room, url })), null, 2), { mode: 0o600, flag: 'wx' });
 writeFileSync(resolve(output, 'register-tags.sql'), tags.map(tag => `INSERT INTO nfc_tags (id, room, token_hash) VALUES ('${tag.id}', '${tag.room}', '${tag.hash}');`).join('\n'), { mode: 0o600, flag: 'wx' });

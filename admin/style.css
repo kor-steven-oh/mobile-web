@@ -51,3 +51,5 @@
  .admin-app .login-card{padding:24px;gap:20px}
  .admin-app .login-card input,.admin-app .login-card button{min-height:50px}
 }
+
+.admin-app .gift-tier-status{display:flex;flex-wrap:wrap;gap:5px}

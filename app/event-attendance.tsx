@@ -102,7 +102,6 @@ export default function EventAttendance({ participantId }: { participantId?: str
   }, [participantId, refresh]);
 
   const count = status?.records.length;
-  const gift = status?.rewards.find(reward => reward.kind === 'gift');
   const raffleEligible = (count ?? 0) >= 4;
   const raffleEntry = status?.raffleEntry ?? null;
   return (
@@ -110,7 +109,7 @@ export default function EventAttendance({ participantId }: { participantId?: str
       {celebration?.participantId === participantId && celebration && <AttendanceCelebration count={celebration.count} title={celebration.title} onDismiss={dismissCelebration}/>}
       <div className="attendance-heading"><span className="eyebrow">LEARN & WIN</span><Nfc size={26} aria-hidden="true" /></div>
       <h2 id="attendance-title">배움이 쌓이면,<br/><span>행운도 함께.</span></h2>
-      <p className="attendance-intro">강연장 입구에서 NFC 태깅으로 수강을 인증하세요.<br/>2개 인증하면 참여선물, 4개 인증하면 럭키드로우!</p>
+      <p className="attendance-intro">강연장 입구에서 NFC 태깅으로 수강을 인증하세요.<br/>2개·3개 인증마다 참여선물, 4개 인증하면 럭키드로우!</p>
       <div className="attendance-progress">
         <div className="attendance-progress-heading"><h3>나의 수강 인증</h3><span><b>{count ?? '–'}</b> / 5</span></div>
         <p>시간대별 1개씩, 최대 5개 인증</p>
@@ -133,12 +132,16 @@ export default function EventAttendance({ participantId }: { participantId?: str
         {message && <p className="attendance-success" role="status">{message}</p>}
         {error && <p className="registration-error" role="alert">{error}</p>}
       </div>
-      <div className={`attendance-reward ${gift ? 'unlocked' : ''}`}>
-        <div className="reward-icon"><Gift size={25}/></div>
-        <div><span className="reward-threshold">2개 이상 인증</span><h3>참여선물</h3><p>{gift ? gift.redeemedAt ? '참여선물 수령 완료' : '이 화면을 STAFF에게 제출하세요.' : count === undefined ? '인증 현황을 확인하고 있어요.' : `${Math.max(0, 2 - count)}개 더 인증하면 받을 수 있어요.`}</p></div>
-        {gift && <Check className="reward-check" size={20}/>}
-        <GiftRedemption gift={gift} onRedeemed={reward => setStatus(current => current ? { ...current, rewards: current.rewards.map(item => item.id === reward.id ? reward : item) } : current)}/>
-      </div>
+      {([2, 3] as const).map(threshold => {
+        const gift = status?.rewards.find(reward => reward.kind === (threshold === 2 ? 'gift' : 'gift3'));
+        const title = threshold === 2 ? '참여선물' : '추가 참여선물';
+        return <div key={threshold} className={`attendance-reward ${gift ? 'unlocked' : ''}`}>
+          <div className="reward-icon"><Gift size={25}/></div>
+          <div><span className="reward-threshold">{threshold}개 이상 인증</span><h3>{title}</h3><p>{gift ? gift.redeemedAt ? `${title} 수령 완료` : '이 화면을 STAFF에게 제출하세요.' : count === undefined ? '인증 현황을 확인하고 있어요.' : `${Math.max(0, threshold - count)}개 더 인증하면 받을 수 있어요.`}</p></div>
+          {gift && <Check className="reward-check" size={20}/>}
+          <GiftRedemption threshold={threshold} gift={gift} onRedeemed={reward => setStatus(current => current ? { ...current, rewards: current.rewards.map(item => item.id === reward.id ? reward : item) } : current)}/>
+        </div>;
+      })}
       <div className={`attendance-reward lucky-reward ${raffleEligible ? 'unlocked' : ''}`}>
         <div className="reward-icon"><Ticket size={25}/></div>
         <div><span className="reward-threshold">4개 이상 인증</span><h3>럭키드로우 응모권</h3><p>{raffleEntry ? '응모권 발급 완료! 추첨 현장 안내를 확인해주세요.' : raffleEligible ? '응모하기를 누르고 나만의 번호를 받으세요.' : count === undefined ? '인증 현황을 확인하고 있어요.' : `${Math.max(0, 4 - count)}개 더 인증하면 응모할 수 있어요.`}</p></div>

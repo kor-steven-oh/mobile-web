@@ -1,4 +1,4 @@
-export type AdminUser = { id: string; name: string; phone: string; createdAt: string; attendanceCount: number; giftIssued: number; giftRedeemedAt: number | null; raffleNumber: number | null; raffleVoidedAt: number | null };
+export type AdminUser = { id: string; name: string; phone: string; createdAt: string; attendanceCount: number; giftIssued: number; giftRedeemedAt: number | null; gift3Issued: number; gift3RedeemedAt: number | null; raffleNumber: number | null; raffleVoidedAt: number | null };
 export type ResetAction = 'attendance' | 'session' | 'gift' | 'raffle' | 'participation';
 export class AdminError extends Error {
   status: number;
@@ -8,6 +8,8 @@ const userSelect = `SELECT r.id, r.name, r.phone, r.created_at AS createdAt,
   (SELECT COUNT(*) FROM attendance WHERE registration_id=r.id) AS attendanceCount,
   EXISTS(SELECT 1 FROM event_rewards WHERE registration_id=r.id AND kind='gift') AS giftIssued,
   (SELECT redeemed_at FROM event_rewards WHERE registration_id=r.id AND kind='gift') AS giftRedeemedAt,
+  EXISTS(SELECT 1 FROM event_rewards WHERE registration_id=r.id AND kind='gift3') AS gift3Issued,
+  (SELECT redeemed_at FROM event_rewards WHERE registration_id=r.id AND kind='gift3') AS gift3RedeemedAt,
   e.number AS raffleNumber, e.voided_at AS raffleVoidedAt
   FROM registrations r LEFT JOIN raffle_entries e ON e.registration_id=r.id`;
 export async function listUsers(db: D1Database, search: string, page: number) {
@@ -19,7 +21,7 @@ export async function listUsers(db: D1Database, search: string, page: number) {
     db.prepare('SELECT COUNT(*) AS total FROM registrations r' + where).bind(name, phone),
     db.prepare(`SELECT (SELECT COUNT(*) FROM registrations) AS users,
       (SELECT COUNT(*) FROM attendance) AS verifications,
-      (SELECT COUNT(*) FROM event_rewards WHERE kind='gift' AND redeemed_at IS NOT NULL) AS gifts,
+      (SELECT COUNT(*) FROM event_rewards WHERE kind IN ('gift','gift3') AND redeemed_at IS NOT NULL) AS gifts,
       (SELECT COUNT(*) FROM raffle_entries WHERE voided_at IS NULL) AS entries,
       (SELECT COALESCE(MAX(number),0) FROM raffle_entries) AS maxNumber`),
   ]);
@@ -52,11 +54,12 @@ export async function resetUser(db: D1Database, id: string, actor: string, input
       : db.prepare('DELETE FROM attendance WHERE registration_id=?').bind(id));
     statements.push(db.prepare(`DELETE FROM event_rewards WHERE registration_id=? AND
       ((kind='gift' AND (SELECT COUNT(*) FROM attendance WHERE registration_id=?)<2)
-      OR (kind='ticket' AND (SELECT COUNT(*) FROM attendance WHERE registration_id=?)<4))`).bind(id,id,id));
+      OR (kind='gift3' AND (SELECT COUNT(*) FROM attendance WHERE registration_id=?)<3)
+      OR (kind='ticket' AND (SELECT COUNT(*) FROM attendance WHERE registration_id=?)<4))`).bind(id,id,id,id));
     statements.push(db.prepare(`UPDATE raffle_entries SET voided_at=COALESCE(voided_at,?) WHERE registration_id=?
       AND (SELECT COUNT(*) FROM attendance WHERE registration_id=?)<4`).bind(now,id,id));
   }
-  if (input.action === 'gift') statements.push(db.prepare("UPDATE event_rewards SET redeemed_at=NULL WHERE registration_id=? AND kind='gift'").bind(id));
+  if (input.action === 'gift') statements.push(db.prepare("UPDATE event_rewards SET redeemed_at=NULL WHERE registration_id=? AND kind IN ('gift','gift3')").bind(id));
   if (input.action === 'raffle') statements.push(db.prepare('UPDATE raffle_entries SET voided_at=COALESCE(voided_at,?) WHERE registration_id=?').bind(now,id));
   await db.batch(statements);
   return userDetail(db,id);

@@ -29,7 +29,9 @@ export async function POST(request: Request) {
       input = JSON.parse(new TextDecoder().decode(bytes));
     } catch { return error('STAFF 인증번호를 확인해주세요.', 400); }
     if (!input || typeof input !== 'object' || !('pin' in input) || typeof input.pin !== 'string') return error('STAFF 인증번호 4자리를 입력해주세요.', 400);
-    return Response.json(await redeemGift(await getD1(), profile.id, input.pin), { headers });
+    const kind = 'kind' in input ? input.kind : 'gift';
+    if (kind !== 'gift' && kind !== 'gift3') return error('선물 종류를 확인해주세요.', 400);
+    return Response.json(await redeemGift(await getD1(), profile.id, input.pin, Date.now(), kind), { headers });
   } catch (cause) {
     if (cause instanceof GiftRedemptionError) return error(cause.message, cause.status);
     return error('수령 처리를 완료하지 못했습니다. 다시 시도해주세요.', 503);

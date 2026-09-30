@@ -22,7 +22,7 @@ test('all 25 room/slot URL combinations survive the login redirect and clear aft
       location.pathname = '/';
       assert.equal(pendingNfcToken(), token);
       assert.equal(pendingNfcSlot(), slot);
-      location.pathname = '/event';
+      location.pathname = '/gift';
       assert.equal(pendingNfcSlot(), slot);
       clearPendingNfc();
       assert.equal(pendingNfcToken(), null);

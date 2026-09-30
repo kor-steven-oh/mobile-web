@@ -10,10 +10,11 @@ import { listUsers, resetUser, userDetail } from '../db/admin.ts';
 
 // Execute the production SQL against SQLite with the same transactional batch contract as D1.
 class SqliteD1 {
-  constructor() {
+  constructor(beforeGift3 = false) {
     this.sql = new DatabaseSync(':memory:');
     this.sql.exec('PRAGMA foreign_keys = ON');
     for (const name of readdirSync(new URL('../drizzle/', import.meta.url)).filter(name => name.endsWith('.sql')).sort()) {
+      if (beforeGift3 && name.startsWith('0008_')) continue;
       this.sql.exec(readFileSync(new URL(`../drizzle/${name}`, import.meta.url), 'utf8'));
     }
   }
@@ -38,8 +39,8 @@ class SqliteD1 {
     } catch (error) { this.sql.exec('ROLLBACK'); throw error; }
   }
 }
-async function fixture(t) {
-  const db = new SqliteD1();
+async function fixture(t, beforeGift3 = false) {
+  const db = new SqliteD1(beforeGift3);
   t.after(() => db.sql.close());
   db.sql.exec("INSERT INTO registrations(id,name,phone) VALUES ('p1','테스트','01000000000'),('p2','다른참가자','01000000001')");
   const tokens = {};
@@ -51,7 +52,7 @@ async function fixture(t) {
   return { db, tokens, time };
 }
 
-test('rewards unlock at 2 and 4 slots and stay single after the fifth and retries', async t => {
+test('rewards unlock at 2, 3 and 4 slots and stay single after the fifth and retries', async t => {
   const { db, tokens, time } = await fixture(t);
   assert.deepEqual(await attendanceStatus(db, 'p1'), { records: [], rewards: [], raffleEntry: null });
   let ticketId;
@@ -59,6 +60,7 @@ test('rewards unlock at 2 and 4 slots and stay single after the fifth and retrie
     const status = await verifyAttendance(db, 'p1', tokens['101'], time(slot));
     assert.equal(status.records.length, slot);
     assert.equal(status.rewards.filter(r => r.kind === 'gift').length, slot >= 2 ? 1 : 0);
+    assert.equal(status.rewards.filter(r => r.kind === 'gift3').length, slot >= 3 ? 1 : 0);
     assert.equal(status.rewards.filter(r => r.kind === 'ticket').length, slot >= 4 ? 1 : 0);
     if (slot === 4) ticketId = status.rewards.find(r => r.kind === 'ticket').id;
     const repeated = await verifyAttendance(db, 'p1', tokens['101'], time(slot) + 1);
@@ -133,7 +135,7 @@ test('relaxed time policy allows all five chosen slots outside event hours witho
     assert.deepEqual(retry.checkin, { slot, isNew: false });
     assert.deepEqual({ ...retry, checkin: undefined }, { ...result, checkin: undefined });
   }
-  assert.equal((await attendanceStatus(db, 'p1')).rewards.length, 2);
+  assert.equal((await attendanceStatus(db, 'p1')).rewards.length, 3);
   await assert.rejects(verifyAttendance(db, 'p1', tokens['107'], now, { enforceTime: false, slot: 1 }), { status: 409 });
   await assert.rejects(verifyAttendance(db, 'p1', tokens['101'], now, { enforceTime: false, slot: 6 }), { status: 400 });
 });
@@ -312,4 +314,72 @@ test('admin raffle and attendance resets run without confirmation fields and ret
  assert.equal(detail.user.attendanceCount,0);
  assert.equal(detail.audit.length,2);
  assert.ok(detail.audit.every(item=>item.reason==='관리자 직접 초기화'));
+});
+
+
+test('three-session gift enforces eligibility and PIN, redeems independently and stays single on retries', async t => {
+  const { db, tokens, time } = await fixture(t);
+  for (let slot=1;slot<=2;slot++) await verifyAttendance(db,'p1',tokens['101'],time(slot));
+  await assert.rejects(redeemGift(db,'p1','5555',time(3),'gift3'), {status:403});
+  await assert.rejects(redeemGift(db,'p1','5555',time(3),'ticket'), {status:400});
+  await verifyAttendance(db,'p1',tokens['101'],time(3));
+  await assert.rejects(redeemGift(db,'p1','1234',time(3),'gift3'), {status:403});
+  const results = await Promise.all([
+    redeemGift(db,'p1','5555',time(3),'gift3'),
+    redeemGift(db,'p1','5555',time(3)+1,'gift3'),
+  ]);
+  assert.equal(results.filter(r=>!r.alreadyRedeemed).length,1);
+  assert.equal(results[0].reward.redeemedAt,results[1].reward.redeemedAt);
+  assert.equal(results[0].reward.kind,'gift3');
+  assert.equal((await attendanceStatus(db,'p1')).rewards.find(r=>r.kind==='gift').redeemedAt,null);
+  const original = await redeemGift(db,'p1','5555',time(4));
+  assert.equal(original.reward.kind,'gift');
+  assert.equal((await attendanceStatus(db,'p1')).rewards.find(r=>r.kind==='gift3').redeemedAt,time(3));
+  assert.equal((await listUsers(db,'',1)).stats.gifts,2);
+  await resetUser(db,'p1','admin',{action:'gift'},time(4));
+  const detail = await userDetail(db,'p1');
+  assert.equal(detail.user.giftRedeemedAt,null);
+  assert.equal(detail.user.gift3RedeemedAt,null);
+  assert.equal(detail.user.gift3Issued,1);
+  assert.equal(detail.user.attendanceCount,3);
+});
+
+test('dropping below three sessions removes only the extra gift and records it in the audit', async t => {
+  const { db, tokens, time } = await fixture(t);
+  for (let slot=1;slot<=3;slot++) await verifyAttendance(db,'p1',tokens['101'],time(slot));
+  await redeemGift(db,'p1','5555',time(3));
+  await redeemGift(db,'p1','5555',time(3),'gift3');
+  const detail = await resetUser(db,'p1','admin',{action:'session',slot:3},time(4));
+  assert.equal(detail.user.giftIssued,1);
+  assert.equal(detail.user.giftRedeemedAt,time(3));
+  assert.equal(detail.user.gift3Issued,0);
+  assert.equal(detail.user.gift3RedeemedAt,null);
+  await assert.rejects(redeemGift(db,'p1','5555',time(4),'gift3'), {status:403});
+  const snapshot=JSON.parse(db.sql.prepare('SELECT snapshot FROM admin_audit').get().snapshot);
+  assert.equal(snapshot.rewards.find(r=>r.kind==='gift3').redeemedAt,time(3));
+  await verifyAttendance(db,'p1',tokens['101'],time(3));
+  assert.equal((await attendanceStatus(db,'p1')).rewards.find(r=>r.kind==='gift3').redeemedAt,null);
+});
+
+test('gift3 migration preserves prior gifts and raffle entries while backfilling only eligible attendees', async t => {
+  const { db, time } = await fixture(t, true);
+  for (const [id,count] of [['p1',4],['p2',2]]) {
+    for (let slot=1;slot<=count;slot++) db.sql.prepare('INSERT INTO attendance VALUES (?,?,?,?,?)').run(id,slot,10100+slot,'101',time(slot));
+  }
+  db.sql.prepare('INSERT INTO event_rewards VALUES (?,?,?,?,?)').run('old-gift','p1','gift',time(2),time(3));
+  db.sql.prepare('INSERT INTO event_rewards VALUES (?,?,?,?,?)').run('old-ticket','p1','ticket',time(4),null);
+  db.sql.prepare('INSERT INTO raffle_entries(registration_id,issued_at) VALUES (?,?)').run('p1',time(4));
+  const oldRewards = db.sql.prepare('SELECT * FROM event_rewards ORDER BY id').all();
+  const oldEntries = db.sql.prepare('SELECT * FROM raffle_entries').all();
+  db.sql.exec('BEGIN');
+  db.sql.exec(readFileSync(new URL('../drizzle/0008_freezing_yellow_claw.sql', import.meta.url),'utf8'));
+  db.sql.exec('COMMIT');
+  assert.deepEqual(db.sql.prepare("SELECT * FROM event_rewards WHERE kind!='gift3' ORDER BY id").all(),oldRewards);
+  assert.deepEqual(db.sql.prepare('SELECT * FROM raffle_entries').all(),oldEntries);
+  const extra = db.sql.prepare("SELECT * FROM event_rewards WHERE kind='gift3'").all();
+  assert.equal(extra.length,1);
+  assert.equal(extra[0].registration_id,'p1');
+  assert.equal(extra[0].redeemed_at,null);
+  assert.equal((await redeemGift(db,'p1','5555',time(5),'gift3')).reward.redeemedAt,time(5));
+  assert.deepEqual(db.sql.prepare('PRAGMA foreign_key_check').all(),[]);
 });

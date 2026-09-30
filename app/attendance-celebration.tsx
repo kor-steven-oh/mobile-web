@@ -27,7 +27,7 @@ export default function AttendanceCelebration({ count, title, onDismiss }: {
     return () => { window.clearTimeout(timer); window.removeEventListener('keydown', onKey); };
   }, [onDismiss]);
 
-  const milestone = count === 2 ? '참여선물을 받을 수 있어요!' : count === 4 ? '럭키드로우에 응모할 수 있어요!' : count === 5 ? '5개 세션 인증을 모두 완료했어요!' : `${count}번째 배움이 쌓였어요!`;
+  const milestone = count === 2 ? '참여선물을 받을 수 있어요!' : count === 3 ? '추가 참여선물을 받을 수 있어요!' : count === 4 ? '럭키드로우에 응모할 수 있어요!' : count === 5 ? '5개 세션 인증을 모두 완료했어요!' : `${count}번째 배움이 쌓였어요!`;
   const MilestoneIcon = count === 2 ? Gift : count === 4 ? Ticket : Check;
   return createPortal(
     <div className="checkin-celebration">
