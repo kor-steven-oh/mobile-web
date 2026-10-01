@@ -323,6 +323,9 @@
 .gift-receipt{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;border-radius:12px;background:#ddefe3;color:#18744b}
 .gift-receipt>div{display:grid;gap:4px}.gift-receipt strong{font-size:14px;font-weight:700}.gift-receipt span{font-size:12px}
 .staff-gift-dialog{width:min(400px,calc(100vw - 28px));max-width:calc(100vw - 28px);max-height:calc(100dvh - 28px);padding:22px;overflow-y:auto}
+.staff-gift-dialog .modal-heading{gap:12px}
+.staff-gift-dialog .modal-heading .eyebrow{font-size:20px;font-weight:750;letter-spacing:-.5px;line-height:1.45;word-break:keep-all}
+.staff-gift-dialog .modal-heading .icon-button{flex-shrink:0}
 .staff-gift-dialog h2{font-size:clamp(21px,5.5vw,25px);line-height:1.4;letter-spacing:-.6px;margin-bottom:20px}
 .staff-gift-dialog .staff-pin-form{border:0;margin:0;padding:0}
 .staff-gift-dialog .staff-pin-form>p{line-height:1.6}
@@ -438,17 +441,21 @@
 .experience-success.compact{margin:0;padding:0;border:0;gap:0}
 .experience-success.compact .experience-success-stamp{flex-basis:24px;width:24px;height:24px;font-size:12px}
 
-.pre-registration-gift{margin:22px 0 8px;border:1px solid var(--line);border-radius:16px;background:#f7f9ff;box-shadow:0 3px 14px #1957ff08}
-.pre-gift-details{display:flex;align-items:center;gap:12px;width:100%;min-height:86px;padding:15px;text-align:left;border-radius:15px}
-.pre-registration-gift-icon{position:relative;display:grid;place-items:center;flex:0 0 38px;height:38px;border-radius:12px;background:var(--lime);color:var(--blue)}
+.pre-registration-gift{margin:22px 0 8px;border:1px solid var(--line);border-radius:19px;background:#f7f9ff;box-shadow:0 3px 14px #1957ff08}
+.pre-gift-details{display:flex;align-items:center;gap:14px;width:100%;min-height:112px;padding:16px 17px;text-align:left;border-radius:18px}
+.pre-registration-gift-icon{position:relative;display:grid;place-items:center;flex:0 0 51px;height:56px;border-radius:14px;background:var(--lime);color:var(--blue)}
 .pre-gift-card-sparkle{position:absolute;right:-5px;top:-5px;padding:1px;border-radius:50%;background:#f7f9ff;color:var(--blue)}
 .pre-gift-card-copy{display:grid;gap:5px;flex:1;min-width:0}
-.pre-gift-card-copy strong{font-size:16px;line-height:1.4;font-weight:650;letter-spacing:-.4px;color:var(--ink)}
-.pre-gift-card-copy>span{font-size:12px;line-height:1.6;color:#637591;word-break:keep-all;overflow-wrap:anywhere}
+.pre-gift-card-copy strong{font-size:20px;line-height:1.4;font-weight:650;letter-spacing:-.5px;color:var(--ink);word-break:keep-all}
+.pre-gift-card-copy>span{font-size:var(--text-small);line-height:1.6;color:#637591;word-break:keep-all;overflow-wrap:anywhere}
 .pre-gift-details>svg{flex-shrink:0;color:#7b8da8}
 .pre-registration-gift:not(.is-redeemed) .pre-gift-card-copy>span{color:var(--blue)}
 .pre-registration-gift.is-redeemed{border-color:#dce8e1;background:#fff;box-shadow:none}
 .pre-registration-gift.is-redeemed .pre-registration-gift-icon{background:#e4f0e9;color:#327456}
+@media(max-width:374px){
+ .pre-gift-details{padding-inline:13px;gap:10px}
+ .pre-gift-card-copy strong{font-size:18px}
+}
 .pre-gift-notice-copy{font-size:14px;line-height:1.85;color:#637591;margin:16px 0}
 .pre-gift-notice-copy strong{font-weight:600;color:#354b6b}
 .pre-gift-dialog{overflow-y:auto;overscroll-behavior:contain;text-align:center}
@@ -464,6 +471,7 @@
 
 .pre-gift-notice{background:radial-gradient(ellipse at 0 0,#edf3ff 0,transparent 55%),radial-gradient(ellipse at 100% 15%,#f1f7df 0,transparent 42%),#fafcff;border-color:#fff}
 .pre-gift-notice .modal-heading{margin-bottom:4px}
+.pre-gift-notice .modal-heading .eyebrow{font-size:14px}
 .pre-gift-celebration{position:relative;display:grid;place-items:center;width:156px;height:116px;margin:0 auto 12px}
 .pre-gift-celebration-halo{position:absolute;width:108px;height:108px;border:1px solid #dce6fb;border-radius:50%;background:#eef4ff99}
 .pre-gift-celebration-seal{position:relative;display:grid;place-items:center;width:78px;height:78px;border-radius:25px;background:linear-gradient(145deg,#3978ff,var(--blue));color:#fff;box-shadow:0 10px 22px #1957ff26,inset 0 1px 0 #ffffff60;transform:rotate(-8deg)}
@@ -474,15 +482,15 @@
 .pre-gift-celebration>i:nth-last-child(3){right:13px;bottom:20px;width:7px;height:7px;border-radius:50%;background:#8cb1ff}
 .pre-gift-celebration>i:nth-last-child(2){left:17px;bottom:18px;width:5px;height:5px;border-radius:50%;background:#8cb1ff}
 .pre-gift-celebration>i:last-child{right:37px;top:0;width:5px;height:5px;border-radius:50%;background:#c8df82}
-.pre-gift-notice h2{font-size:clamp(28px,7vw,32px);font-weight:750;letter-spacing:-1px;margin-bottom:14px}
-.pre-gift-notice .pre-gift-notice-copy{margin:0 0 22px;word-break:keep-all;color:#5e708c}
+.pre-gift-notice h2{font-size:clamp(32px,8vw,36px);font-weight:750;letter-spacing:-1px;margin-bottom:14px}
+.pre-gift-notice .pre-gift-notice-copy{font-size:17px;line-height:1.8;margin:0 0 22px;word-break:keep-all;color:#5e708c}
 .pre-gift-notice-guide{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 10px;border:1px solid #e0e8f6;border-radius:14px;background:#ffffffc9;text-align:left}
 .pre-gift-notice-guide>svg{flex-shrink:0;color:var(--blue)}
-.pre-gift-notice-guide p{font-size:12px;line-height:1.8;color:#6a7d98;word-break:keep-all}
+.pre-gift-notice-guide p{font-size:15px;line-height:1.8;color:#6a7d98;word-break:keep-all}
 .pre-gift-notice-guide strong{color:#345481;font-weight:650}
-.pre-gift-notice>.primary-button{margin-top:20px;min-height:48px;border-radius:14px}
+.pre-gift-notice>.primary-button{font-size:18px;margin-top:20px;min-height:48px;border-radius:14px}
 
-.pre-gift-hide-notice{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin-top:12px;color:#687b95;font-size:12px;cursor:pointer}
+.pre-gift-hide-notice{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin-top:12px;color:#687b95;font-size:15px;cursor:pointer}
 .pre-gift-hide-notice input{width:17px;height:17px;accent-color:var(--blue);cursor:pointer}
 .pre-gift-hide-notice input:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .pre-gift-hide-notice+.primary-button{margin-top:6px}
