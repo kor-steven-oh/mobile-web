@@ -13,6 +13,7 @@ type Props = {
 export default function HallPager({ hall, onHallChange, children }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const activeIndex = useRef(halls.findIndex(value => value === hall));
+  const scrollTarget = useRef<number | null>(null);
   const drag = useRef<{ id: number; x: number; y: number; left: number; moved: boolean } | null>(null);
   const suppressClick = useRef(false);
 
@@ -21,8 +22,11 @@ export default function HallPager({ hall, onHallChange, children }: Props) {
     const index = halls.findIndex(value => value === hall);
     if (!element || index === activeIndex.current) return;
     activeIndex.current = index;
-    // Button selection jumps directly; native gestures retain their own momentum.
-    element.scrollTo({ left: index * element.clientWidth, behavior: 'instant' });
+    scrollTarget.current = index;
+    element.scrollTo({
+      left: index * element.clientWidth,
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    });
   }, [hall]);
 
   useEffect(() => {
@@ -34,6 +38,19 @@ export default function HallPager({ hall, onHallChange, children }: Props) {
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  function syncHall(element: HTMLDivElement) {
+    if (!element.clientWidth) return;
+    const target = scrollTarget.current;
+    // Keep the selected tab stable while passing intermediate rooms.
+    if (target !== null && Math.abs(element.scrollLeft - target * element.clientWidth) > 1) return;
+    scrollTarget.current = null;
+    const index = Math.max(0, Math.min(halls.length - 1, Math.round(element.scrollLeft / element.clientWidth)));
+    if (index !== activeIndex.current) {
+      activeIndex.current = index;
+      onHallChange(halls[index]);
+    }
+  }
 
   function finishDrag(event: PointerEvent<HTMLDivElement>, cancelled = false) {
     const gesture = drag.current;
@@ -62,15 +79,12 @@ export default function HallPager({ hall, onHallChange, children }: Props) {
       aria-label="강연장별 프로그램, 좌우로 스와이프하거나 방향키로 이동"
       aria-roledescription="캐러셀"
       tabIndex={0}
-      onScroll={event => {
-        const element = event.currentTarget;
-        if (!element.clientWidth) return;
-        const index = Math.max(0, Math.min(halls.length - 1, Math.round(element.scrollLeft / element.clientWidth)));
-        if (index !== activeIndex.current) {
-          activeIndex.current = index;
-          onHallChange(halls[index]);
-        }
+      onScroll={event => syncHall(event.currentTarget)}
+      onScrollEnd={event => {
+        scrollTarget.current = null;
+        syncHall(event.currentTarget);
       }}
+      onWheel={() => { scrollTarget.current = null; }}
       onKeyDown={event => {
         if (event.target !== event.currentTarget || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
         event.preventDefault();
@@ -78,6 +92,7 @@ export default function HallPager({ hall, onHallChange, children }: Props) {
         onHallChange(halls[index]);
       }}
       onPointerDown={event => {
+        scrollTarget.current = null;
         suppressClick.current = false;
         if (event.pointerType !== 'mouse' || event.button !== 0) return;
         drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, left: event.currentTarget.scrollLeft, moved: false };
