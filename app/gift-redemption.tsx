@@ -59,7 +59,7 @@ export default function GiftRedemption({ threshold, gift, onRedeemed }: Props) {
       : <>
         <button className="gift-redeem-button" type="button" disabled={!gift || busy} aria-haspopup="dialog" aria-expanded={open} onClick={() => { flushSync(() => { setOpen(true); setError(''); setPin(''); }); }}><Gift size={18}/>{gift ? `${title} 받기` : `${threshold}개 인증 후 수령 가능`}</button>
         {open && gift && <StaffDialog busy={busy} title={`${threshold}개 인증 · ${title}`} onClose={() => { setOpen(false); setPin(''); setError(''); }}><form className="staff-pin-form" onSubmit={submit}>
-          <label htmlFor={pinId}>STAFF 인증번호 4자리</label>
+          <label htmlFor={pinId}>STAFF 인증번호 4자리 <span className="staff-pin-caution">(임의로 입력하시면 안됩니다)</span></label>
           <input autoFocus id={pinId} type="password" inputMode="numeric" autoComplete="off" maxLength={4} pattern="[0-9]{4}" placeholder="••••" value={pin} onChange={event => setPin(event.target.value.replace(/\D/g, '').slice(0, 4))} disabled={busy} required />
           <p className="staff-pin-help">STAFF가 선물 전달 후 인증번호를 입력해주세요.</p>
           {error && <p className="registration-error" role="alert">{error}</p>}

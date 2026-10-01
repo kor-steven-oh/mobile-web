@@ -17,8 +17,8 @@ const pieces = Array.from({ length: 24 }, (_, index) => {
   } as CSSProperties;
 });
 
-export default function AttendanceCelebration({ count, title, eventZoneVerified = false, onDismiss }: {
-  count: number; title: string; eventZoneVerified?: boolean; onDismiss: () => void;
+export default function AttendanceCelebration({ count, title, eventZoneVerified = false, kind = 'session', onDismiss }: {
+  count: number; title: string; eventZoneVerified?: boolean; kind?: 'session' | 'event-zone'; onDismiss: () => void;
 }) {
   useEffect(() => {
     const timer = window.setTimeout(onDismiss, 4800);
@@ -27,8 +27,9 @@ export default function AttendanceCelebration({ count, title, eventZoneVerified 
     return () => { window.clearTimeout(timer); window.removeEventListener('keydown', onKey); };
   }, [onDismiss]);
 
-  const milestone = count === 2 ? '참여선물을 받을 수 있어요!' : count === 3 ? '추가 참여선물을 받을 수 있어요!' : count === 4 ? (eventZoneVerified ? '럭키드로우에 응모할 수 있어요!' : '이벤트존 참여 인증까지 하면 럭키드로우!') : count === 5 ? '5개 세션 인증을 모두 완료했어요!' : `${count}번째 배움이 쌓였어요!`;
-  const MilestoneIcon = count === 2 ? Gift : count === 4 ? Ticket : Check;
+  const eventZoneCheckin = kind === 'event-zone';
+  const milestone = eventZoneCheckin ? (count >= 4 ? '럭키드로우에 응모할 수 있어요!' : `강의 세션 ${4 - count}개 더 인증하면 럭키드로우!`) : count === 2 ? '참여선물을 받을 수 있어요!' : count === 3 ? '추가 참여선물을 받을 수 있어요!' : count === 4 ? (eventZoneVerified ? '럭키드로우에 응모할 수 있어요!' : '이벤트존 참여 인증까지 하면 럭키드로우!') : count === 5 ? '5개 세션 인증을 모두 완료했어요!' : `${count}번째 배움이 쌓였어요!`;
+  const MilestoneIcon = eventZoneCheckin ? (count >= 4 ? Ticket : Check) : count === 2 ? Gift : count === 4 ? Ticket : Check;
   return createPortal(
     <div className="checkin-celebration">
       <div className="checkin-celebration-card">
@@ -40,13 +41,13 @@ export default function AttendanceCelebration({ count, title, eventZoneVerified 
         </div>
         <div role="status" aria-live="polite" aria-atomic="true">
           <span className="checkin-celebration-label">CHECK-IN COMPLETE</span>
-          <h2>수강 인증 완료!</h2>
+          <h2>{eventZoneCheckin ? '이벤트존 인증 완료!' : '수강 인증 완료!'}</h2>
           <p className="checkin-celebration-title">{title}</p>
           <p className="checkin-celebration-milestone"><MilestoneIcon size={17} aria-hidden="true"/>{milestone}</p>
         </div>
-        <div className="checkin-celebration-progress" aria-label={`${count}개 인증 완료, 전체 5개`}>
+        {eventZoneCheckin ? <div className="checkin-celebration-progress event-zone-complete"><span className="filled" aria-hidden="true"><Check size={14}/></span><strong>이벤트존 참여 인증 완료</strong></div> : <div className="checkin-celebration-progress" aria-label={`${count}개 인증 완료, 전체 5개`}>
           {Array.from({ length: 5 }, (_, index) => <span key={index} className={index < count ? 'filled' : ''} aria-hidden="true">{index < count ? <Check size={14}/> : index + 1}</span>)}
-        </div>
+        </div>}
       </div>
     </div>, document.body,
   );

@@ -73,9 +73,7 @@ function GiftDialog({ participantId, mode, redeemedAt, onRedeemed, onClose }: { 
       }}/><span>다시 보지 않기</span></label>
       <button type="button" className="primary-button" onClick={onClose}>확인</button>
     </> : <>
-    <div className="pre-gift-dialog-icon" aria-hidden="true"><Gift size={28}/></div>
-    <h2 id="pre-gift-dialog-title">사전등록 선물지급</h2>
-    <p className="pre-gift-congratulations">사전 이벤트 당첨을 축하드립니다!</p>
+    <div className="pre-gift-title"><span className="pre-gift-dialog-icon" aria-hidden="true"><Gift size={23}/></span><h2 id="pre-gift-dialog-title">사전등록 선물지급</h2></div>
     <Image className="pre-gift-photo" src="/pre-registration-gift.webp" alt="사전등록 선물: 살로몬 백팩과 착용 모습, SDD 키링" width={1200} height={498} unoptimized loading="eager"/>
     {redeemedAt !== null ? <>
       <div className="gift-receipt" role="status"><Check size={22}/><div><strong>사전등록 선물 지급 완료</strong><span>{receiptDate(redeemedAt)}</span></div></div>
@@ -83,7 +81,7 @@ function GiftDialog({ participantId, mode, redeemedAt, onRedeemed, onClose }: { 
     </> : <>
       <p className="pre-gift-pickup">현장 STAFF에게 이 화면을 보여주세요.<br/>선물 전달 후 STAFF가 인증번호를 입력합니다.</p>
       <form className="staff-pin-form pre-gift-pin-form" onSubmit={submit}>
-        <label htmlFor={pinId}>STAFF 인증번호 4자리</label>
+        <label htmlFor={pinId}>STAFF 인증번호 4자리 <span className="staff-pin-caution">(임의로 입력하시면 안됩니다)</span></label>
         <input id={pinId} type="password" inputMode="numeric" autoComplete="off" maxLength={4} pattern="[0-9]{4}" placeholder="••••" value={pin} onChange={event => setPin(event.target.value.replace(/\D/g, '').slice(0, 4))} disabled={busy} required/>
         {error && <p className="registration-error" role="alert">{error}</p>}
         <button className="gift-redeem-button" type="submit" disabled={busy || pin.length !== 4}>{busy ? '지급 확인 중…' : '지급 완료 처리'}</button>

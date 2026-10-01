@@ -16,6 +16,8 @@
 .checkin-celebration-progress{display:flex;justify-content:center;gap:8px;margin-top:18px}
 .checkin-celebration-progress>span{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:#e6ebf3;color:#8792a4;font-size:11px}
 .checkin-celebration-progress>span.filled{background:var(--blue);color:white}
+.checkin-celebration-progress.event-zone-complete{align-items:center}
+.event-zone-complete>strong{font-size:12px;font-weight:600;color:#49658d}
 .attendance-stamps>.just-verified .stamp-circle{animation:checkin-row-stamp .6s cubic-bezier(.16,1,.3,1) both}
 @keyframes checkin-card-arrive{from{opacity:0;transform:translateY(-16px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes checkin-stamp{0%{opacity:0;transform:scale(1.45) rotate(-14deg)}45%{opacity:1;transform:scale(.93) rotate(3deg)}70%{transform:scale(1.04) rotate(-1deg)}100%{opacity:1;transform:scale(1) rotate(0)}}

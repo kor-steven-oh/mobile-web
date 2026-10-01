@@ -16,7 +16,7 @@ import type { AttendanceCheckinResult, AttendanceStatus } from '../db/attendance
 const slots = sessions.filter(session => session.hall === '101 AP');
 
 export default function EventAttendance({ participantId }: { participantId?: string }) {
-  const [celebration, setCelebration] = useState<{ participantId: string; slot: number; count: number; title: string } | null>(null);
+  const [celebration, setCelebration] = useState<{ participantId: string; slot: number | null; count: number; title: string } | null>(null);
   const dismissCelebration = useCallback(() => setCelebration(null), []);
   const [status, setStatus] = useState<AttendanceStatus | null>(null);
   const [message, setMessage] = useState('');
@@ -69,7 +69,9 @@ export default function EventAttendance({ participantId }: { participantId?: str
             clearPendingNfc(); setRetryCheckin(false); setStatus(result);
             setMessage(result.checkin?.slot === null ? (result.checkin.isNew ? '이벤트존 참여 인증이 완료되었습니다.' : '이미 이벤트존 참여를 인증했습니다.') : result.checkin?.isNew ? '수강 인증이 완료되었습니다.' : '이미 인증한 세션입니다. 인증 내역은 그대로 유지됩니다.');
             const record = result.records.find(item => item.slot === result.checkin?.slot);
-            if (record && participantId) {
+            if (result.checkin?.slot === null && result.eventZoneVerifiedAt !== null && participantId) {
+              setCelebration({ participantId, slot: null, count: result.records.length, title: '이벤트존 참여를 인증했어요.' });
+            } else if (record && participantId) {
               setCelebration({ participantId, slot: record.slot, count: result.records.length, title: record.title });
             }
             return;
@@ -88,9 +90,13 @@ export default function EventAttendance({ participantId }: { participantId?: str
           setStatus(result);
           // Only the in-page refresh button replays an existing certification.
           // Failed NFC attempts must not show a success animation from this fallback GET.
-          if (!token && participantId && refresh.celebrateFor === participantId && result.records.length) {
-            const record = result.records.reduce((latest, item) => item.verifiedAt > latest.verifiedAt ? item : latest);
-            setCelebration({ participantId, slot: record.slot, count: result.records.length, title: record.title });
+          if (!token && participantId && refresh.celebrateFor === participantId) {
+            const record = result.records.length ? result.records.reduce((latest, item) => item.verifiedAt > latest.verifiedAt ? item : latest) : undefined;
+            if (result.eventZoneVerifiedAt != null && (!record || result.eventZoneVerifiedAt >= record.verifiedAt)) {
+              setCelebration({ participantId, slot: null, count: result.records.length, title: '이벤트존 참여를 인증했어요.' });
+            } else if (record) {
+              setCelebration({ participantId, slot: record.slot, count: result.records.length, title: record.title });
+            }
           }
         }
       } catch (cause) {
@@ -107,7 +113,7 @@ export default function EventAttendance({ participantId }: { participantId?: str
   const raffleEntry = status?.raffleEntry ?? null;
   return (
     <section className="attendance-event" aria-labelledby="attendance-title">
-      {celebration?.participantId === participantId && celebration && <AttendanceCelebration count={celebration.count} eventZoneVerified={eventZoneVerified} title={celebration.title} onDismiss={dismissCelebration}/>}
+      {celebration?.participantId === participantId && celebration && <AttendanceCelebration kind={celebration.slot === null ? 'event-zone' : 'session'} count={celebration.count} eventZoneVerified={eventZoneVerified} title={celebration.title} onDismiss={dismissCelebration}/>}
       <div className="attendance-heading"><span className="eyebrow">LEARN & WIN</span><Nfc size={26} aria-hidden="true" /></div>
       <h2 id="attendance-title">배움이 쌓이면, <span>행운도 함께.</span></h2>
       <p className="attendance-intro">강연장 입구에서 NFC 태깅으로 수강을 인증하세요.<br/>2개·3개 인증마다 참여선물!<br/>강의 세션 4개 및 이벤트존 참여하면 럭키드로우!</p>
@@ -137,7 +143,7 @@ export default function EventAttendance({ participantId }: { participantId?: str
         <div className="attendance-progress-heading"><h3>이벤트존 참여 인증</h3><span><b>{status ? eventZoneVerified ? 1 : 0 : '–'}</b> / 1</span></div>
         <p>이벤트존에 참여한 뒤 현장의 NFC 태그로 인증해주세요.</p>
         <ol className="attendance-stamps" aria-label="이벤트존 참여 인증 현황">
-          <li className={eventZoneVerified ? 'verified' : ''}>
+          <li className={[eventZoneVerified ? 'verified' : '', celebration?.participantId === participantId && celebration?.slot === null ? 'just-verified' : ''].filter(Boolean).join(' ')}>
             <span className="stamp-circle" aria-label={eventZoneVerified ? '이벤트존 인증 완료' : status ? '이벤트존 미인증' : '확인 중'}>{eventZoneVerified ? <Check size={22}/> : <Nfc size={22}/>}</span>
             <div className="attendance-session-summary">
               <div className="attendance-session-meta"><span>EVENT ZONE</span><span className="attendance-session-status">{eventZoneVerified ? '인증 완료' : status ? '미인증' : '확인 중'}</span></div>
