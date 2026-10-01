@@ -1,0 +1,1 @@
+ALTER TABLE `pre_registration_gifts` ADD `redeemed_at` integer;

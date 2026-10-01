@@ -83,9 +83,11 @@ test('gift page explains attendance thresholds and renders five slots',async()=>
  assert.match(html,/3<!-- -->개 이상 인증/);
  assert.match(html,/추가 참여선물/);
  assert.match(html,/3개 인증 후 수령 가능/);
- assert.match(html,/4개 이상 인증/);
+ assert.match(html,/강의 세션 4개 및 이벤트존 참여하면 럭키드로우!/);
+ assert.match(html,/이벤트존 참여 인증/);
+ assert.match(html,/강의 세션 4개 \+ 이벤트존 참여 인증/);
  assert.match(html,/럭키드로우 응모권/);
- assert.equal((html.match(/class="stamp-circle"/g)||[]).length,5);
+ assert.equal((html.match(/class="stamp-circle"/g)||[]).length,6);
  assert.doesNotMatch(html,/SDD26-/);
  assert.doesNotMatch(html,/attendance-slot|attendance-test-controls|선택한 회차 인증/);
 });
@@ -146,4 +148,21 @@ test('event zone is separate from gift attendance and rewards',async()=>{
  assert.doesNotMatch(html,/나의 수강 인증|stamp-circle|응모하기/);
  const gift=await (await render('/gift')).text();
  assert.match(gift,/<h1>Gift<\/h1>/);
+});
+
+
+test('pre-registration gift eligibility requires login and public Home hides the card',async()=>{
+ const response=await worker.fetch(new Request('http://localhost/api/pre-registration-gift?phone=01012345678'),{},{});
+ assert.equal(response.status,401);
+ const html=await (await render('/home')).text();
+ assert.doesNotMatch(html,/id="pre-registration-gift-title"/);
+});
+
+
+test('pre-registration gift payout requires a session and rejects foreign origins',async()=>{
+ const url='http://localhost/api/pre-registration-gift';
+ const anonymous=await worker.fetch(new Request(url,{method:'POST',headers:{origin:'http://localhost','content-type':'application/json'},body:JSON.stringify({pin:'5555'})}),{},{});
+ assert.equal(anonymous.status,401);
+ const foreign=await worker.fetch(new Request(url,{method:'POST',headers:{origin:'https://example.com','content-type':'application/json'},body:JSON.stringify({pin:'5555'})}),{},{});
+ assert.equal(foreign.status,403);
 });

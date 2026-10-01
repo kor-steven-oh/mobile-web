@@ -64,6 +64,34 @@
       "when": 1790773266931,
       "tag": "0008_freezing_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790858103267,
+      "tag": "0009_freezing_skaar",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1790858296644,
+      "tag": "0010_fearless_mordo",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1790864135124,
+      "tag": "0011_flimsy_jamie_braddock",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790864814292,
+      "tag": "0012_furry_gressill",
+      "breakpoints": true
     }
   ]
 }

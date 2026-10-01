@@ -1,5 +1,5 @@
 import { authenticate, cookie, login, logout } from './auth';
-import { AdminError, listUsers, resetUser, userDetail, type ResetAction } from '../db/admin';
+import { listNfcTags, listPreRegistrationGifts, updatePreRegistrationGift, AdminError, listUsers, resetUser, userDetail, type ResetAction } from '../db/admin';
 
 const json = (value: unknown, status = 200, extra: Record<string,string> = {}) => Response.json(value, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...extra } });
 async function input(request: Request): Promise<Record<string,unknown>> {
@@ -31,6 +31,13 @@ const adminWorker = {
       if(url.pathname==='/api/session'&&request.method==='GET')return json({authenticated:Boolean(admin)});
       if(!admin)return json({error:'관리자 로그인이 필요합니다.'},401);
       if(url.pathname==='/api/logout'&&request.method==='POST'){await logout(env.DB,request);return json({authenticated:false},200,{'Set-Cookie':cookie(request,'',true)});}
+      if(url.pathname==='/api/nfc-tags'&&request.method==='GET')return json({tags:await listNfcTags(env.DB)});
+      if(url.pathname==='/api/pre-registration-gifts') {
+        if(request.method==='GET') return json(await listPreRegistrationGifts(env.DB,(url.searchParams.get('q')||'').slice(0,80),Number(url.searchParams.get('page')||1)));
+        const data=await input(request);
+        if(typeof data.phone!=='string'||data.phone.length>30||typeof data.action!=='string')throw new AdminError('전화번호와 등록 또는 삭제 항목을 확인해주세요.');
+        return json(await updatePreRegistrationGift(env.DB,data.phone,data.action));
+      }
       if(url.pathname==='/api/users'&&request.method==='GET') {
         const page=Number(url.searchParams.get('page')||1);
         if(!Number.isInteger(page)||page<1||page>100000)return json({error:'페이지를 확인해주세요.'},400);

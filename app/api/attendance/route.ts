@@ -51,6 +51,6 @@ export async function POST(request: Request) {
     }), { headers });
   } catch (cause) {
     if (cause instanceof AttendanceError || cause instanceof VenueLocationError) return error(cause.message, cause.status);
-    return error('수강 인증을 저장하지 못했습니다. 다시 시도해주세요.', 503);
+    return error('참여 인증을 저장하지 못했습니다. 다시 시도해주세요.', 503);
   }
 }

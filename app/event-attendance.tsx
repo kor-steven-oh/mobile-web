@@ -67,7 +67,7 @@ export default function EventAttendance({ participantId }: { participantId?: str
           if (!active) return;
           if (response.ok) {
             clearPendingNfc(); setRetryCheckin(false); setStatus(result);
-            setMessage(result.checkin?.isNew ? '수강 인증이 완료되었습니다.' : '이미 인증한 세션입니다. 인증 내역은 그대로 유지됩니다.');
+            setMessage(result.checkin?.slot === null ? (result.checkin.isNew ? '이벤트존 참여 인증이 완료되었습니다.' : '이미 이벤트존 참여를 인증했습니다.') : result.checkin?.isNew ? '수강 인증이 완료되었습니다.' : '이미 인증한 세션입니다. 인증 내역은 그대로 유지됩니다.');
             const record = result.records.find(item => item.slot === result.checkin?.slot);
             if (record && participantId) {
               setCelebration({ participantId, slot: record.slot, count: result.records.length, title: record.title });
@@ -102,14 +102,15 @@ export default function EventAttendance({ participantId }: { participantId?: str
   }, [participantId, refresh]);
 
   const count = status?.records.length;
-  const raffleEligible = (count ?? 0) >= 4;
+  const eventZoneVerified = status?.eventZoneVerifiedAt != null;
+  const raffleEligible = (count ?? 0) >= 4 && eventZoneVerified;
   const raffleEntry = status?.raffleEntry ?? null;
   return (
     <section className="attendance-event" aria-labelledby="attendance-title">
-      {celebration?.participantId === participantId && celebration && <AttendanceCelebration count={celebration.count} title={celebration.title} onDismiss={dismissCelebration}/>}
+      {celebration?.participantId === participantId && celebration && <AttendanceCelebration count={celebration.count} eventZoneVerified={eventZoneVerified} title={celebration.title} onDismiss={dismissCelebration}/>}
       <div className="attendance-heading"><span className="eyebrow">LEARN & WIN</span><Nfc size={26} aria-hidden="true" /></div>
-      <h2 id="attendance-title">배움이 쌓이면,<br/><span>행운도 함께.</span></h2>
-      <p className="attendance-intro">강연장 입구에서 NFC 태깅으로 수강을 인증하세요.<br/>2개·3개 인증마다 참여선물, 4개 인증하면 럭키드로우!</p>
+      <h2 id="attendance-title">배움이 쌓이면, <span>행운도 함께.</span></h2>
+      <p className="attendance-intro">강연장 입구에서 NFC 태깅으로 수강을 인증하세요.<br/>2개·3개 인증마다 참여선물!<br/>강의 세션 4개 및 이벤트존 참여하면 럭키드로우!</p>
       <div className="attendance-progress">
         <div className="attendance-progress-heading"><h3>나의 수강 인증</h3><span><b>{count ?? '–'}</b> / 5</span></div>
         <p>시간대별 1개씩, 최대 5개 인증</p>
@@ -132,6 +133,20 @@ export default function EventAttendance({ participantId }: { participantId?: str
         {message && <p className="attendance-success" role="status">{message}</p>}
         {error && <p className="registration-error" role="alert">{error}</p>}
       </div>
+      <div className="attendance-progress event-zone-progress">
+        <div className="attendance-progress-heading"><h3>이벤트존 참여 인증</h3><span><b>{status ? eventZoneVerified ? 1 : 0 : '–'}</b> / 1</span></div>
+        <p>이벤트존에 참여한 뒤 현장의 NFC 태그로 인증해주세요.</p>
+        <ol className="attendance-stamps" aria-label="이벤트존 참여 인증 현황">
+          <li className={eventZoneVerified ? 'verified' : ''}>
+            <span className="stamp-circle" aria-label={eventZoneVerified ? '이벤트존 인증 완료' : status ? '이벤트존 미인증' : '확인 중'}>{eventZoneVerified ? <Check size={22}/> : <Nfc size={22}/>}</span>
+            <div className="attendance-session-summary">
+              <div className="attendance-session-meta"><span>EVENT ZONE</span><span className="attendance-session-status">{eventZoneVerified ? '인증 완료' : status ? '미인증' : '확인 중'}</span></div>
+              <h4>{eventZoneVerified ? '이벤트존 참여를 인증했어요' : '이벤트존에서 즐기고 인증해주세요'}</h4>
+              <p>{eventZoneVerified ? '강의 세션 4개도 인증하면 럭키드로우에 응모할 수 있어요.' : '이벤트존 NFC 태깅 시 참여 인증이 완료됩니다.'}</p>
+            </div>
+          </li>
+        </ol>
+      </div>
       {([2, 3] as const).map(threshold => {
         const gift = status?.rewards.find(reward => reward.kind === (threshold === 2 ? 'gift' : 'gift3'));
         const title = threshold === 2 ? '참여선물' : '추가 참여선물';
@@ -144,11 +159,11 @@ export default function EventAttendance({ participantId }: { participantId?: str
       })}
       <div className={`attendance-reward lucky-reward ${raffleEligible ? 'unlocked' : ''}`}>
         <div className="reward-icon"><Ticket size={25}/></div>
-        <div><span className="reward-threshold">4개 이상 인증</span><h3>럭키드로우 응모권</h3><p>{raffleEntry ? '응모권 발급 완료! 추첨 현장 안내를 확인해주세요.' : raffleEligible ? '응모하기를 누르고 나만의 번호를 받으세요.' : count === undefined ? '인증 현황을 확인하고 있어요.' : `${Math.max(0, 4 - count)}개 더 인증하면 응모할 수 있어요.`}</p></div>
+        <div><span className="reward-threshold">강의 세션 4개 + 이벤트존 참여 인증</span><h3>럭키드로우 응모권</h3><p>{raffleEntry ? '응모권 발급 완료! 추첨 현장 안내를 확인해주세요.' : raffleEligible ? '응모하기를 누르고 나만의 번호를 받으세요.' : count === undefined ? '인증 현황을 확인하고 있어요.' : count < 4 ? `강의 세션 ${4 - count}개${eventZoneVerified ? '를' : '와 이벤트존 참여를'} 더 인증하면 응모할 수 있어요.` : '이벤트존 참여를 인증하면 응모할 수 있어요.'}</p></div>
         {raffleEntry && <Check className="reward-check" size={20}/>}
         <RaffleEntryCard eligible={raffleEligible} entry={raffleEntry} onEntered={entry => setStatus(current => current ? { ...current, raffleEntry: entry } : current)}/>
       </div>
-      <div className="attendance-instructions"><h3><Nfc size={19}/> 이렇게 참여하세요</h3><ol><li>강연 시작 시 입구의 NFC 태그에 휴대폰을 가까이 대세요.</li><li>{attendancePolicy.enforceLocation ? '태그의 링크를 열고 로그인한 뒤 위치 권한을 허용해주세요. 행사장 반경 200m 안인지 확인한 후 인증됩니다.' : '태그의 링크를 열고 로그인해주세요. 위치는 조회하지만 허용 여부나 위치 결과에 관계없이 인증됩니다.'}</li><li>{attendancePolicy.enforceTime ? '각 강연 시작 후 10분 이내에 인증해주세요.' : '현재는 강연 시간과 관계없이 URL에 지정된 강연이 자동 인증됩니다.'} 같은 시간대의 다른 강연은 추가 인증할 수 없습니다.</li></ol><p>현재 위치는 인증할 때만 확인하며 좌표는 저장하지 않습니다. 수강 인증과 응모권은 로그인한 참가자 정보로 보관됩니다. 선물 수령과 추첨 일정은 현장 안내를 확인해주세요.</p></div>
+      <div className="attendance-instructions"><h3><Nfc size={19}/> 이렇게 참여하세요</h3><ol><li>강연 시작 시 입구의 NFC 태그에 휴대폰을 가까이 대세요.</li><li>{attendancePolicy.enforceLocation ? '태그의 링크를 열고 로그인한 뒤 위치 권한을 허용해주세요. 행사장 반경 200m 안인지 확인한 후 인증됩니다.' : '태그의 링크를 열고 로그인해주세요. 위치는 조회하지만 허용 여부나 위치 결과에 관계없이 인증됩니다.'}</li><li>{attendancePolicy.enforceTime ? '각 강연 시작 후 10분 이내에 인증해주세요.' : '현재는 강연 시간과 관계없이 URL에 지정된 강연이 자동 인증됩니다.'} 같은 시간대의 다른 강연은 추가 인증할 수 없습니다.</li><li>이벤트존에 참여하고 현장의 NFC 태그로 참여를 인증해주세요. 강의 세션 4개 이상과 이벤트존 참여 인증을 모두 완료하면 럭키드로우에 응모할 수 있습니다.</li></ol><p>현재 위치는 인증할 때만 확인하며 좌표는 저장하지 않습니다. 수강·이벤트존 참여 인증과 응모권은 로그인한 참가자 정보로 보관됩니다. 선물 수령과 추첨 일정은 현장 안내를 확인해주세요.</p></div>
     </section>
   );
 }

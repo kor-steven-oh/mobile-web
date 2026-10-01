@@ -1,9 +1,9 @@
 import type { RaffleEntry } from './raffle';
 export type AttendanceRecord = { slot: number; sessionId: number; title: string; room: string; verifiedAt: number };
 export type EventReward = { id: string; kind: 'gift' | 'gift3' | 'ticket'; issuedAt: number; redeemedAt: number | null };
-export type AttendanceStatus = { records: AttendanceRecord[]; rewards: EventReward[]; raffleEntry: RaffleEntry | null };
+export type AttendanceStatus = { records: AttendanceRecord[]; eventZoneVerifiedAt: number | null; rewards: EventReward[]; raffleEntry: RaffleEntry | null };
 
-export type AttendanceCheckinResult = AttendanceStatus & { checkin: { slot: number; isNew: boolean } };
+export type AttendanceCheckinResult = AttendanceStatus & { checkin: { slot: number | null; isNew: boolean } };
 
 export class AttendanceError extends Error {
   status: number;
@@ -22,20 +22,48 @@ function statusQueries(db: D1Database, registrationId: string) {
       WHERE a.registration_id = ? ORDER BY a.slot`).bind(registrationId),
     db.prepare(`SELECT id, kind, issued_at AS issuedAt, redeemed_at AS redeemedAt
       FROM event_rewards WHERE registration_id = ? ORDER BY issued_at`).bind(registrationId),
-    db.prepare('SELECT number, issued_at AS issuedAt FROM raffle_entries WHERE registration_id = ? AND voided_at IS NULL').bind(registrationId),
+    db.prepare(`SELECT number, issued_at AS issuedAt FROM raffle_entries WHERE registration_id = ? AND voided_at IS NULL
+      AND (SELECT COUNT(*) FROM attendance WHERE registration_id = ?) >= 4
+      AND EXISTS (SELECT 1 FROM event_zone_attendance WHERE registration_id = ?)`).bind(registrationId, registrationId, registrationId),
+    db.prepare('SELECT verified_at AS verifiedAt FROM event_zone_attendance WHERE registration_id = ?').bind(registrationId),
   ];
 }
 
-function statusFromResults([records, rewards, raffle]: D1Result[]): AttendanceStatus {
-  return { records: records.results as AttendanceRecord[], rewards: rewards.results as EventReward[], raffleEntry: (raffle.results[0] as RaffleEntry | undefined) ?? null };
+function statusFromResults([records, rewards, raffle, eventZone]: D1Result[]): AttendanceStatus {
+  return { eventZoneVerifiedAt: (eventZone.results[0] as { verifiedAt: number } | undefined)?.verifiedAt ?? null, records: records.results as AttendanceRecord[], rewards: rewards.results as EventReward[], raffleEntry: (raffle.results[0] as RaffleEntry | undefined) ?? null };
 }
 
 export async function attendanceStatus(db: D1Database, registrationId: string): Promise<AttendanceStatus> {
   return statusFromResults(await db.batch(statusQueries(db, registrationId)));
 }
 
+function rewardQueries(db: D1Database, registrationId: string, now: number) {
+  return (['gift', 'gift3', 'ticket'] as const).map(kind => db.prepare(`
+    INSERT INTO event_rewards (id, registration_id, kind, issued_at)
+    SELECT ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM attendance WHERE registration_id = ?) >= ?
+    AND (? != 'ticket' OR EXISTS (SELECT 1 FROM event_zone_attendance WHERE registration_id = ?))
+    ON CONFLICT(registration_id, kind) DO NOTHING
+  `).bind(crypto.randomUUID(), registrationId, kind, now, registrationId, kind === 'gift' ? 2 : kind === 'gift3' ? 3 : 4, kind, registrationId));
+}
+
 // The clock is supplied by the server, never by the request body.
 export async function verifyAttendance(db: D1Database, registrationId: string, token: string, now = Date.now(), options: { enforceTime?: boolean; slot?: number } = {}) {
+  // Tag purpose comes only from the registered server-side room, never the URL.
+  const tag = await db.prepare('SELECT id, room FROM nfc_tags WHERE token_hash = ? AND active = 1')
+    .bind(await hashNfcToken(token)).first<{ id: string; room: string }>();
+  if (!tag) throw new AttendanceError('유효하지 않은 NFC 태그입니다. 입구에서 다시 태깅해주세요.', 404);
+  if (tag.room === 'EVENT_ZONE') {
+    const results = await db.batch([
+      db.prepare(`INSERT INTO event_zone_attendance (registration_id, tag_id, verified_at)
+        SELECT ?, id, ? FROM nfc_tags WHERE id = ? AND room = 'EVENT_ZONE' AND active = 1
+        ON CONFLICT(registration_id) DO NOTHING RETURNING verified_at`).bind(registrationId, now, tag.id),
+      ...rewardQueries(db, registrationId, now),
+      ...statusQueries(db, registrationId),
+    ]);
+    const status = statusFromResults(results.slice(4));
+    if (status.eventZoneVerifiedAt === null) throw new AttendanceError('이벤트존의 NFC 태그를 다시 확인해주세요.');
+    return { ...status, checkin: { slot: null, isNew: results[0].results.length > 0 } } satisfies AttendanceCheckinResult;
+  }
   const enforceTime = options.enforceTime !== false;
   const slot = options.slot ?? 1;
   if (!enforceTime && (!Number.isInteger(slot) || slot < 1 || slot > 5)) {
@@ -58,11 +86,7 @@ export async function verifyAttendance(db: D1Database, registrationId: string, t
     db.prepare(`INSERT INTO attendance (registration_id, slot, session_id, tag_id, verified_at)
       SELECT ?, ?, ?, id, ? FROM nfc_tags WHERE id = ? AND active = 1
       ON CONFLICT(registration_id, slot) DO NOTHING RETURNING slot`).bind(registrationId, session.slot, session.id, now, session.tagId),
-    ...(['gift', 'gift3', 'ticket'] as const).map(kind => db.prepare(`
-      INSERT INTO event_rewards (id, registration_id, kind, issued_at)
-      SELECT ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM attendance WHERE registration_id = ?) >= ?
-      ON CONFLICT(registration_id, kind) DO NOTHING
-    `).bind(crypto.randomUUID(), registrationId, kind, now, registrationId, kind === 'gift' ? 2 : kind === 'gift3' ? 3 : 4)),
+    ...rewardQueries(db, registrationId, now),
     ...statusQueries(db, registrationId),
   ]);
   const status = statusFromResults(inserted.slice(4));

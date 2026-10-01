@@ -1,0 +1,1 @@
+ALTER TABLE `nfc_tags` ADD `url` text;

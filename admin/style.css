@@ -53,3 +53,32 @@
 }
 
 .admin-app .gift-tier-status{display:flex;flex-wrap:wrap;gap:5px}
+
+.admin-app .pre-gift-panel{margin-bottom:24px}
+.admin-app .pre-gift-description{font-size:13px;line-height:1.8;color:#6e7d91;margin-bottom:18px}
+.admin-app .pre-gift-panel .success{margin-bottom:18px}
+.admin-app .pre-gift-recipients{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0 24px}
+.admin-app .pre-gift-recipients li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #edf0f5;font-variant-numeric:tabular-nums}
+@media(max-width:1050px){.admin-app .has-detail .pre-gift-panel{display:none}}
+@media(max-width:600px){.admin-app .pre-gift-recipients{grid-template-columns:minmax(0,1fr)}}
+
+.admin-app .nfc-links-panel{margin-bottom:24px}
+.admin-app .nfc-links-description{font-size:13px;line-height:1.8;color:#6e7d91;margin-bottom:18px}
+.admin-app .nfc-links-panel .success{margin-bottom:14px}
+.admin-app .nfc-room-list{display:grid;gap:10px}
+.admin-app .nfc-room-list details{border:1px solid #e0e7f1;border-radius:12px;padding:0 14px}
+.admin-app .nfc-room-list summary{cursor:pointer;padding:15px 0;font-weight:600;min-height:48px}
+.admin-app .nfc-room-list summary span{float:right;font-size:12px;font-weight:400;color:#73829a}
+.admin-app .nfc-room-list summary:focus-visible{outline:3px solid #7fa5fd;outline-offset:2px}
+.admin-app .nfc-room-list details>p{padding-bottom:14px}
+.admin-app .nfc-tag-links{padding-bottom:14px;display:grid;gap:12px}
+.admin-app .nfc-url-row label{display:block;font-size:12px;color:#667891;margin-bottom:6px}
+.admin-app .nfc-url-row>div{display:flex;gap:8px}
+.admin-app .nfc-url-row input{flex:1;width:0;font-size:13px}
+.admin-app .nfc-url-row button{flex-shrink:0}
+@media(max-width:1050px){.admin-app .has-detail .nfc-links-panel{display:none}}
+@media(max-width:600px){.admin-app .nfc-url-row input{font-size:16px}}
+
+.admin-app .pre-gift-recipients li>div{display:grid;gap:5px}
+.admin-app .pre-gift-recipients small{font-size:11px;line-height:1.5}
+.admin-app .pre-gift-paid{color:#267448}

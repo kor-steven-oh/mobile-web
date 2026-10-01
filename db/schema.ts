@@ -32,6 +32,7 @@ export const eventSessions = sqliteTable('event_sessions', {
 export const nfcTags = sqliteTable('nfc_tags', {
   id: text('id').primaryKey(),
   tokenHash: text('token_hash').notNull().unique(),
+  url: text('url'),
   room: text('room').notNull(),
   active: integer('active').notNull().default(1),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -47,6 +48,13 @@ export const attendance = sqliteTable('attendance', {
   primaryKey({ columns: [table.registrationId, table.slot] }),
   foreignKey({ columns: [table.sessionId, table.slot], foreignColumns: [eventSessions.id, eventSessions.slot] }),
 ]);
+
+// EVENT_ZONE NFC tags record participation independently of lecture slots.
+export const eventZoneAttendance = sqliteTable('event_zone_attendance', {
+  registrationId: text('registration_id').primaryKey().references(() => registrations.id),
+  tagId: text('tag_id').notNull().references(() => nfcTags.id),
+  verifiedAt: integer('verified_at').notNull(),
+});
 
 export const eventRewards = sqliteTable('event_rewards', {
   id: text('id').primaryKey(),
@@ -86,3 +94,10 @@ export const adminAudit = sqliteTable('admin_audit', {
   snapshot: text('snapshot').notNull(),
   createdAt: integer('created_at').notNull(),
 }, table => [index('admin_audit_registration_created').on(table.registrationId, table.createdAt)]);
+
+// Phone-based allowlist can be prepared before attendees create their accounts.
+export const preRegistrationGifts = sqliteTable('pre_registration_gifts', {
+  phone: text('phone').primaryKey(),
+  redeemedAt: integer('redeemed_at'),
+  createdAt: integer('created_at').notNull(),
+});

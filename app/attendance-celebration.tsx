@@ -17,8 +17,8 @@ const pieces = Array.from({ length: 24 }, (_, index) => {
   } as CSSProperties;
 });
 
-export default function AttendanceCelebration({ count, title, onDismiss }: {
-  count: number; title: string; onDismiss: () => void;
+export default function AttendanceCelebration({ count, title, eventZoneVerified = false, onDismiss }: {
+  count: number; title: string; eventZoneVerified?: boolean; onDismiss: () => void;
 }) {
   useEffect(() => {
     const timer = window.setTimeout(onDismiss, 4800);
@@ -27,7 +27,7 @@ export default function AttendanceCelebration({ count, title, onDismiss }: {
     return () => { window.clearTimeout(timer); window.removeEventListener('keydown', onKey); };
   }, [onDismiss]);
 
-  const milestone = count === 2 ? '참여선물을 받을 수 있어요!' : count === 3 ? '추가 참여선물을 받을 수 있어요!' : count === 4 ? '럭키드로우에 응모할 수 있어요!' : count === 5 ? '5개 세션 인증을 모두 완료했어요!' : `${count}번째 배움이 쌓였어요!`;
+  const milestone = count === 2 ? '참여선물을 받을 수 있어요!' : count === 3 ? '추가 참여선물을 받을 수 있어요!' : count === 4 ? (eventZoneVerified ? '럭키드로우에 응모할 수 있어요!' : '이벤트존 참여 인증까지 하면 럭키드로우!') : count === 5 ? '5개 세션 인증을 모두 완료했어요!' : `${count}번째 배움이 쌓였어요!`;
   const MilestoneIcon = count === 2 ? Gift : count === 4 ? Ticket : Check;
   return createPortal(
     <div className="checkin-celebration">
